@@ -1,0 +1,13 @@
+name: covid-19-metropolitan-summary
+title: covid-19-metropolitan-summary
+username: spkent
+account: spkent
+server: data-viz.it.wisc.edu
+hostUrl: http://data-viz.it.wisc.edu/__api__
+appId: 11
+bundleId: 32
+url: http://data-viz.it.wisc.edu/covid-19-metropolitan-summary/
+when: 1586438763.4228
+asMultiple: FALSE
+asStatic: FALSE
+ignoredFiles: app2.R|average-daily-change-in-total-cases_nyt.png|confirmed-cases-color-scale.png|confirmed-deaths-color-scale.png|covid-19.Rmd|nyt-article-recreation-2020-04-07.html|nyt-article-recreation-2020-04-08.html|nyt-article-recreation-2020-04-08.Rmd|nyt-article-recreation-v2.Rmd|nyt-article-recreation-v3.Rmd|nyt-article-recreation.html|nyt-article-recreation.Rmd|nyt_plot3_2020-04-01.png|nyt_plot4_2020-04-01.png|nyt_visualizations.Rmd

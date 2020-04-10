@@ -1,0 +1,141 @@
+---
+title: "Coronavirus in the U.S.: How Fast It's Growing"
+# author: "Srikanth Aravamuthan"
+date: "Updated `r format(Sys.time(), '%B %d, %Y, %I:%M %p %Z')`"
+output: 
+  html_document:
+    code_folding: hide
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = FALSE,
+  # cache = TRUE, 
+  message = FALSE,
+  warning = FALSE, 
+  fig.width = 10
+)
+
+library(tidyverse)
+library(plotly)
+
+```
+
+```{r}
+us_states <- read_csv("https://raw.githubusercontent.com/nytimes/covid-19-data/master/us-states.csv")
+
+```
+
+
+```{r}
+x <- 11
+y <- 15
+
+scrape.ui <- function(x,y) {
+  require(rvest)
+  url <- paste0("https://dwd.wisconsin.gov/covid19/public/stats/week-",x:(y-1),".htm")
+  url <- c(url, "https://dwd.wisconsin.gov/covid19/public/ui-stats.htm")
+  df <- matrix(nrow=0,ncol=3)
+  for(i in 1:(y-x+1)) {
+    tab <- read_html(url[i]) %>% 
+      html_nodes("table") %>% 
+      html_table()
+    tab[[1]]$Week <- x+i-1
+    # tab[[1]] <- tab[[1]] %>% 
+    #   mutate(Week = (x+i-1))
+    df <- rbind(df,tab[[1]])
+  }
+  return(df)
+}
+
+df_ui <- scrape.ui(x,y)
+
+df_ui <- df_ui %>% 
+  mutate_at(vars(`2020Daily Total`:`2019Daily Total`), str_remove_all, pattern = ",") %>% 
+  mutate_at(vars(`2020Daily Total`:`2019Daily Total`), str_remove_all, pattern = "\\*") %>% 
+  mutate_at(vars(`2020Daily Total`:`2019Daily Total`), as.numeric) %>% 
+  mutate(date = lubridate::as_date(lubridate::ymd(20200301):(lubridate::ymd(20200301)+n()-1)))
+
+```
+
+```{r dpi = 96}
+plot_data <- us_states %>% 
+  filter(state == "Wisconsin") %>% 
+  left_join(df_ui, by = "date") %>% 
+  mutate(`Cases` = (cases / lag(cases, n = 7, default = NA))^(1 / 7) - 1,
+         `Unemployment` = (`2020Daily Total` / lag(`2020Daily Total`, n = 7, default = NA))^(1 / 7) - 1) %>% 
+  pivot_longer(col = `Cases`:`Unemployment`,
+               names_to = "name",
+               values_to = "Average Daily Change (Last 7 Days)") %>% 
+  rename(Date = date)
+
+fig1a <- plot_ly(data = plot_data,
+               x = ~Date,
+               y = ~`Average Daily Change (Last 7 Days)`,
+               color = ~name,
+               # symbol = ~str_detect(metro_name, "WI"),
+               text = ~paste0("</br>", name,
+                             "</br>", Date,
+                             "</br>Daily Change: ", scales::percent(`Average Daily Change (Last 7 Days)`, accuracy = 0.1)),
+               type = "scatter",
+               mode = 'lines+markers',
+               colors = "Paired",
+               alpha = 0.7,
+               hoverinfo = "text") %>% 
+  layout(title = "") %>% 
+  layout(yaxis = list(range = c(-1, 1),
+                      tickformat = "%")) 
+
+fig1a
+
+```
+
+```{r}
+population <- read_csv("http://www2.census.gov/programs-surveys/popest/datasets/2010-2019/national/totals/nst-est2019-alldata.csv")
+
+population <- population %>% 
+  filter(NAME == "Wisconsin") %>% 
+  rename(state = NAME,
+         population = POPESTIMATE2019) %>% 
+  select(state, population)
+
+```
+
+
+```{r dpi = 96}
+plot_data <- us_states %>% 
+  filter(state == "Wisconsin") %>% 
+  left_join(df_ui, by = "date") %>% 
+  left_join(population, by = "state") %>% 
+  mutate(`Cases` = (cases / lag(cases, n = 7, default = NA))^(1 / 7) - 1,
+         `Unemployment` = (`2020Daily Total` / lag(`2020Daily Total`, n = 7, default = NA))^(1 / 7) - 1,
+         `Confirmed Cases Per Thousand People` = cases / population * 1000) %>% 
+  pivot_longer(col = `Cases`:`Unemployment`,
+               names_to = "name",
+               values_to = "Average Daily Change (Last 7 Days)")
+
+fig2a <- plot_ly(data = plot_data,
+               x = ~`Confirmed Cases Per Thousand People`,
+               y = ~`Average Daily Change (Last 7 Days)`,
+               color = ~name,
+               # symbol = ~str_detect(metro_name, "WI"),
+               text = ~paste0("</br>", name,
+                             "</br>", date,
+                             "</br>Cases Per Thousand: ",
+                             round(`Confirmed Cases Per Thousand People`, 3), 
+                             "</br>Daily Change: ", scales::percent(`Average Daily Change (Last 7 Days)`, accuracy = 0.1)),
+               type = "scatter",
+               mode = 'lines+markers',
+               colors = "Paired",
+               # alpha = 0.5,
+               hoverinfo = "text") %>% 
+  layout(title = "") %>% 
+  layout(yaxis = list(range = c(-1, 1),
+                      tickformat = "%")) 
+
+fig2a
+
+```
+
+```{r appendix, ref.label=knitr::all_labels(),echo=TRUE,eval=FALSE}
+```

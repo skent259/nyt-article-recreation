@@ -1,0 +1,13 @@
+name: nyt-summary
+title: nyt-summary
+username:
+account: skent259
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 2080168
+bundleId: 2987452
+url: https://skent259.shinyapps.io/nyt-summary/
+when: 1586362915.24279
+asMultiple: FALSE
+asStatic: FALSE
+ignoredFiles: average-daily-change-in-total-cases_nyt.png|confirmed-cases-color-scale.png|confirmed-deaths-color-scale.png|covid-19.Rmd|nyt-article-recreation-2020-04-07.html|nyt-article-recreation-2020-04-08.html|nyt-article-recreation-2020-04-08.Rmd|nyt-article-recreation-v2.Rmd|nyt-article-recreation-v3.Rmd|nyt-article-recreation.html|nyt-article-recreation.Rmd|nyt_plot3_2020-04-01.png|nyt_plot4_2020-04-01.png|nyt_visualizations.Rmd

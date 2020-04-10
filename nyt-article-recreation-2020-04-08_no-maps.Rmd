@@ -1,0 +1,443 @@
+---
+title: "Coronavirus in the U.S.: How Fast It’s Growing"
+# author: "Sean Kent"
+date: "Updated `r format(Sys.time(), '%B %d, %Y, %I:%M %p %Z')`"
+output: 
+  html_document:
+    code_folding: hide
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = FALSE,
+  # cache = TRUE, 
+  message = FALSE,
+  warning = FALSE, 
+  fig.width = 10
+)
+
+library(tidyverse)
+library(purrr)
+library(lubridate)
+library(zoo)
+library(readxl)
+library(maps)
+# library(sf)
+library(plotly)
+
+```
+
+
+```{r data choices}
+## Data choices
+MIN_CASES_TO_PLOT <- 30
+MIN_DATE <- Sys.Date() - 28 # last 4 weeks
+MAX_DATE <- Sys.Date()
+
+color_palette <- c(RColorBrewer::brewer.pal(12, "Paired"), rep("grey50", 20))
+```
+
+```{r nyt-data}
+# Data from the New York Times repository
+us_counties <- read_csv("https://raw.githubusercontent.com/nytimes/covid-19-data/master/us-counties.csv")
+us_states <- read_csv("https://raw.githubusercontent.com/nytimes/covid-19-data/master/us-states.csv")
+
+# NYT does this annoying thing where they count ("Kings", "Queens", "New York", "Bronx") counties 
+# as the 'county' New York City.  Attempt to fix by removing putting all of the cases/deaths in 
+# New York county, since we are aggregating by metro area anyways
+us_counties[us_counties$county == "New York City", "county"] <- "New York"
+
+```
+
+```{r population-data}
+## Population data from US census 2019 estimates
+county_population <- 
+  read_csv("https://www2.census.gov/programs-surveys/popest/datasets/2010-2019/counties/totals/co-est2019-alldata.csv") %>% 
+  filter(SUMLEV == "050") %>% 
+  mutate(CTYNAME = str_remove(CTYNAME, " County"),
+         CTYNAME = str_remove(CTYNAME, " Parish")) %>% 
+  rename(state = STNAME,
+         county = CTYNAME,
+         population = POPESTIMATE2019) %>% 
+  select(state, county, population)
+
+```
+
+```{r metro-data}
+## Census core based statistical area data
+temp <- tempfile(fileext = ".xls")
+url <- "https://www2.census.gov/programs-surveys/metro-micro/geographies/reference-files/2018/delineation-files/list1_Sep_2018.xls"
+download.file(url, destfile = temp, mode = "wb")
+
+metro <- 
+  read_xls(temp, skip = 2) %>% 
+  mutate(`County/County Equivalent` = str_remove(`County/County Equivalent`, " County"),
+         `County/County Equivalent` = str_remove(`County/County Equivalent`, " Parish")) %>% 
+  rename(state = `State Name`,
+         county = `County/County Equivalent`,
+         metro = `CBSA Title`,
+         area_type = `Metropolitan/Micropolitan Statistical Area`) %>% 
+  select(state, county, metro, area_type)
+
+## Total population by CBSA
+metro_pop <- 
+  county_population %>% 
+  left_join(metro, by = c("state", "county")) %>% 
+  # metro %>% 
+  # left_join(county_population, by = c("state", "county")) %>% 
+  group_by(metro) %>% 
+  mutate(metro_population = sum(population, na.rm = TRUE)) %>% 
+  ungroup()
+
+```
+
+```{r combine-data}
+## Sum county totals by metro area
+us_metroarea <- 
+  us_counties %>% 
+  left_join(metro_pop, by = c("state", "county")) %>% 
+  group_by(metro, date) %>%
+  summarize(cases = sum(cases, na.rm = TRUE),
+            deaths = sum(deaths, na.rm = TRUE),
+            population = max(metro_population, na.rm = TRUE)) %>% 
+  ungroup() 
+
+us_metroarea <- 
+  us_metroarea %>% 
+  mutate(metro_name = case_when(
+    metro == "Chicago-Naperville-Elgin, IL-IN-WI" ~ "Chicago", 
+    metro == "Minneapolis-St. Paul-Bloomington, MN-WI" ~ "Minneapolis", 
+    metro == "Milwaukee-Waukesha, WI" ~ "Milwaukee, WI", 
+    metro == "Madison, WI"  ~ "Madison, WI",
+    metro == "Green Bay, WI" ~ "Green Bay, WI",
+    metro == "Duluth, MN-WI" ~ "Duluth, MN-WI",
+    metro == "Appleton, WI" ~ "Appleton, WI",
+    metro == "Racine, WI" ~ "Racine, WI",
+    metro == "Oshkosh-Neenah, WI" ~ "Oshkosh-Neenah, WI",
+    metro == "Eau Claire, WI" ~ "Eau Claire, WI",
+    metro == "Janesville-Beloit, WI" ~ "Janesville-Beloit, WI",
+    metro == "Wausau-Weston, WI" ~ "Wausau-Weston, WI",
+    metro == "La Crosse-Onalaska, WI-MN" ~ "La Crosse-Onalaska, WI-MN",
+    metro == "Sheboygan, WI" ~ "Sheboygan, WI",
+    metro == "Fond du Lac, WI" ~ "Fond du Lac, WI",
+    metro == "New York-Newark-Jersey City, NY-NJ-PA" ~ "New York",
+    metro == "New Orleans-Metairie, LA" ~ "New Orleans",
+    TRUE ~ NA_character_
+  ))
+
+# Note: this has problems with Kansas City, MO, Dona Ana, NM, and "Unknown" counties
+# These aren't currently relevant to the analysis
+
+```
+
+```{r county-map-data}
+# county <- 
+#   maps::map("county", plot = FALSE, fill = TRUE) %>% 
+#   sf::st_as_sf() %>% 
+#   separate(ID, c("state", "county"), ",") %>% 
+#   mutate(state = tools::toTitleCase(state),
+#          county = tools::toTitleCase(county)) 
+
+us_counties_current_date <- 
+  us_counties %>% 
+  filter(date == max(date))
+
+us_metro_current_date <- 
+  us_counties %>% 
+  left_join(metro_pop, by = c("state", "county")) %>% 
+  filter(date == max(date))
+
+```
+
+```{r wi-metro}
+wi_metro_areas <- 
+  metro_pop %>% 
+  filter(state == "Wisconsin", str_detect(area_type, "Metropolitan")) %>% 
+  select(metro, metro_population) %>% 
+  unique() %>% 
+  arrange(desc(metro_population))
+
+```
+
+```{r cds-data-world}
+## Data from Corona Data Scraper on Lombardy and Hubei regions
+other_metroarea <- 
+  read.csv("https://coronadatascraper.com/timeseries-tidy.csv") %>% 
+  as_tibble() %>% 
+  filter((country == "ITA" & state == "Lombardy") | (country == "CHN" & state == "Hubei"),
+         type %in% c("cases", "deaths")) %>% 
+  pivot_wider(names_from = "type",
+              values_from = "value") %>% 
+  mutate(metro_name = name) %>% 
+  select(metro = name, date, cases, deaths, population, metro_name) 
+
+```
+
+## Summary
+
+Daily growth rates of confirmed cases offer a look at the future growth of the disease and can help measure whether a metropolitan area is "flattening the curve".  Among Wisconsin metro areas with at least 30 cases, Madison has the lowest growth rates of confirmed cases (6-7\% since April 4th).  Most other Wisconsin metro areas range between 9\% and 15\% growth, signaling a reduction from the mid-March growth rates which ranged between 30\% and 80\% for Madison and Milwaukee.  Green Bay recently reached 30 confirmed cases, but their early growth rate is much higher than others in Wisconsin.  Looking at the extent of the pandemic in terms of confirmed cases per thousand, Wisconsin metro areas are faring much better than epicenters like New York (8 cases per thousand) and New Orleans (7.8 cases per thousand).  The highest in Wisconsin is Milwaukee with less than 1 case per thousand.  However, the epicenters are further along in pandemic, and as long as growth rates remain positive, the situation will continue to worsen.  
+
+
+<iframe src="http://data-viz.it.wisc.edu/covid-19-metropolitan-summary/" scrolling="no" style="border: none; width: 100%; height: 200px; overflow: hidden;"></iframe>
+
+
+
+Note: We first observed the visualizations here in the New York Times's the article [Four Ways to Measure Coronavirus Outbreaks in U.S. Metro Areas](https://www.nytimes.com/interactive/2020/03/27/upshot/coronavirus-new-york-comparison.html), which has a follow-up article [Coronavirus in the U.S.: How Fast It’s Growing](https://www.nytimes.com/interactive/2020/04/03/upshot/coronavirus-metro-area-tracker.html) that has been updated daily.  This document adds in less populated Wisconsin metropolitan areas and highlights them against metropolitan areas across the U.S. and the world.  Much of the text explanations below draw from both articles.
+
+
+
+## Daily Growth Rate
+
+To assess the possible future of the outbreak, it’s helpful to look not just at the number of cases but also at how quickly they are increasing. The accompanying chart shows the growth rate of cumulative cases over time, averaged over the previous week.
+
+`r htmltools::h4(paste("Daily growth rate of confirmed cases (once reaching", MIN_CASES_TO_PLOT, "confirmed cases)"))`
+
+```{r dpi = 96}
+## Daily growth rate chart
+plot_data <-
+  rbind(us_metroarea,
+        other_metroarea) %>% 
+  filter(!is.na(metro_name)) %>% 
+  group_by(metro) %>% 
+  nest() %>% 
+  mutate(data = purrr::map(data, function(df) mutate(df, daily.change = (cases / lag(cases, n = 7, default = NA))^(1 / 7) - 1 ))) %>% 
+  unnest() %>% 
+  ungroup() %>% 
+  mutate(`Average Daily Change (Last 7 Days)` = daily.change) %>% 
+  mutate(`Average Daily Change (Last 7 Days)` = ifelse(is.nan(`Average Daily Change (Last 7 Days)`), 0, `Average Daily Change (Last 7 Days)`)) %>% 
+  rename(Name = metro,
+         Date = date,
+         Cases = cases) %>% 
+  filter(Cases > MIN_CASES_TO_PLOT) %>% 
+  filter(between(Date, MIN_DATE, MAX_DATE)) # for comparison
+
+plot_data_ends <-
+  plot_data %>% 
+  filter(!is.na(daily.change)) %>%
+  # filter(!str_detect(metro_name, "WI")) %>% 
+  group_by(Name) %>% 
+  top_n(1, Date) 
+
+fig1 <- plot_ly(data = plot_data,
+               x = ~Date,
+               y = ~`Average Daily Change (Last 7 Days)`,
+               color = ~metro_name,
+               # symbol = ~str_detect(metro_name, "WI"),
+               text = ~paste0("</br>", metro_name,
+                             "</br>", Date,
+                             "</br>Daily Change: ", scales::percent(daily.change, accuracy = 0.1)),
+               type = "scatter",
+               mode = 'lines+markers',
+               colors = "Paired",
+               alpha = 0.7,
+               hoverinfo = "text") %>% 
+  layout(title = "") %>% 
+  layout(yaxis = list(range = c(0, 1),
+                      tickformat = "%")) 
+
+fig1
+
+```
+
+*This plot is interactive*: hover over a data point to see the exact date and value or click on regions in the legend to remove them from the comparison (double-click to see a single region).  Here, we can see whether the trajectory of a local epidemic is getting better or worse. A growth rate of 40 percent on this chart means the cumulative number of cases is growing by 40 percent every day. A rate of 100 percent would mean that the number of cases was doubling daily.  Any growth rate above 0 percent means that there are still new daily cases
+
+**Pros of this measure**: Growth rates help us judge whether the epidemic is getting better or worse in a given place right now.
+
+**Cons**: The timing of different outbreaks can make comparisons difficult. Case data quality varies a lot by place.
+
+
+## Growth Rates by Case Count
+
+The chart below shows the growth rate by the number of cases or deaths in a given metropolitan area.  In this chart, the goal for each region is to reach 0 percent daily change (y-axis) as fast as possible, before the confirmed cases per thousand (x-axis) get too large.  As long as the daily change in cases is above zero, the region will continue to see an increase in confirmed cases, and the line will continue to move to the right.  High growth rates combined with a lot of confirmed cases are a bad combination and may cause health systems to be overwhelmed.
+
+This measurement shows whether a community has succeeded in slowing the rate of growth before there are many cases. In other words, it shows whether a community is succeeding at flattening the curve.
+
+`r htmltools::h4(paste("Daily growth rate of confirmed cases (once reaching", MIN_CASES_TO_PLOT, "confirmed cases)"))`
+
+```{r dpi = 96}
+## Growth Rates by Case Count
+plot_data <-
+  rbind(us_metroarea,
+        other_metroarea) %>% 
+  filter(!is.na(metro_name)) %>% 
+  group_by(metro) %>% 
+  nest() %>% 
+  mutate(data = purrr::map(data, function(df) mutate(df, daily.change = (cases / lag(cases, n = 7, default = NA))^(1 / 7) - 1 ))) %>% 
+  unnest() %>% 
+  ungroup() %>% 
+  # mutate(`Average Daily Change (Last 7 Days)` = round(roll.cases/cases/7*100,2)) %>% 
+  mutate(`Average Daily Change (Last 7 Days)` = daily.change) %>% 
+  mutate(`Average Daily Change (Last 7 Days)` = ifelse(is.nan(`Average Daily Change (Last 7 Days)`), 0, `Average Daily Change (Last 7 Days)`)) %>% 
+  mutate(`Confirmed Cases Per Thousand People` = cases / population * 1000) %>% 
+  rename(Name = metro,
+         Date = date,
+         Cases = cases) %>% 
+  filter(Cases > MIN_CASES_TO_PLOT) 
+
+plot_data_ends <-
+  plot_data %>%
+  group_by(Name) %>%
+  top_n(1, Date) 
+
+fig2 <- plot_ly(data = plot_data,
+               x = ~`Confirmed Cases Per Thousand People`,
+               y = ~`Average Daily Change (Last 7 Days)`,
+               color = ~metro_name,
+               # symbol = ~str_detect(metro_name, "WI"),
+               text = ~paste0("</br>", metro_name,
+                             "</br>", Date,
+                             "</br>Cases Per Thousand: ",
+                             round(`Confirmed Cases Per Thousand People`, 3), 
+                             "</br>Daily Change: ", scales::percent(daily.change, accuracy = 0.1)),
+               type = "scatter",
+               mode = 'lines+markers',
+               colors = "Paired",
+               # alpha = 0.5,
+               hoverinfo = "text") %>% 
+  layout(title = "") %>% 
+  layout(yaxis = list(range = c(0, 1),
+                      tickformat = "%")) 
+
+fig2
+
+```
+
+
+**Pros of this measure**: Helps distinguish between places where cases are growing fast with few cases and places where cases are numerous and still growing fast.
+
+**Cons**: Hard to read at first. Relies on case data.
+
+<!-- ## Maps of Metro Areas -->
+
+<!-- *This plot is interactive*: hover over a metropolitan area to see the exact counts, population, and per capita measurements.  -->
+
+
+<!-- `r htmltools::h4("Confirmed Cases per thousand residents")` -->
+
+```{r dpi = 96, eval = FALSE}
+## US Metro Map (Cases)
+fig3 <- county %>%
+  left_join(us_metro_current_date, by = c("state", "county")) %>%
+  # left_join(county_population, by = c("state", "county")) %>% 
+  # filter(!is.na(metro)) %>%
+  group_by(metro) %>%
+  summarize(cases = sum(cases, na.rm = TRUE),
+            deaths = sum(deaths, na.rm = TRUE),
+            population = max(metro_population, na.rm = TRUE),
+            geometry = sf::st_union(sf::st_buffer(geometry,0.0))) %>% 
+  ungroup() %>%
+  mutate(metro = ifelse(is.na(metro), "Rest of United States", metro)) %>%
+  mutate(cases.per.1000 = round(cases / (population / 1000), 3),
+         cases.per.1000.tool.tip = cases.per.1000,
+         cases.per.1000 = ifelse(cases.per.1000<=0.025, NA, cases.per.1000),
+         cases.per.1000 = ifelse(metro=="Rest of United States", NA, cases.per.1000)) %>% 
+  mutate(cases.per.1000 = cut(cases.per.1000,
+                              c(min(cases.per.1000, na.rm = TRUE), 0.1, 0.25, 0.5, 1, 2, 4, max(cases.per.1000, na.rm = TRUE)))) %>%
+  sf::st_transform(crs = "+proj=aea +lat_1=25 +lat_2=50 +lon_0=-100") %>% 
+  sf::st_cast("MULTIPOLYGON") %>%
+  plot_ly(split = ~metro, 
+          color = ~cases.per.1000, 
+          colors = "YlGnBu", 
+          span = I(0.5),
+          stroke = I("gray50"),
+          alpha = 1,
+          text = ~paste0("</br>", metro, "</br>Cases: ", cases, "</br>Population: ", population, "</br>Cases per Thousand: ", cases.per.1000.tool.tip),
+          hoverinfo = "text",
+          hoveron = "fills") %>%
+  layout(title="",
+         showlegend = FALSE)
+
+fig3
+```
+
+<!-- ```{r, fig.align='center'} -->
+<!-- knitr::include_graphics("confirmed-cases-color-scale.png") -->
+<!-- ``` -->
+
+
+
+<!-- **Pros of this measure:** Focuses on communities where the disease is prevalent. -->
+
+<!-- **Cons:** Varying testing rates make comparisons difficult. Not all confirmed cases are active. -->
+
+<!-- `r htmltools::h4("Confirmed deaths per thousand residents")` -->
+
+```{r dpi = 96, eval = FALSE}
+## US Metro Map (Deaths)
+fig4 <- county %>%
+  left_join(us_metro_current_date, by = c("state", "county")) %>%
+  # left_join(county_population, by = c("state", "county")) %>% 
+  # filter(!is.na(metro)) %>%
+  group_by(metro) %>%
+  summarize(cases = sum(cases, na.rm = TRUE),
+            deaths = sum(deaths, na.rm = TRUE),
+            population = max(metro_population, na.rm = TRUE),
+            geometry = sf::st_union(sf::st_buffer(geometry,0.0))) %>% 
+  ungroup() %>%
+  mutate(metro = ifelse(is.na(metro), "Rest of United States", metro)) %>%
+  mutate(deaths.per.1000 = round(deaths / (population / 1000), 3),
+         deaths.per.1000.tool.tip = deaths.per.1000,
+         deaths.per.1000 = ifelse(deaths.per.1000<=0.001, NA, deaths.per.1000),
+         deaths.per.1000 = ifelse(metro=="Rest of United States", NA, deaths.per.1000)) %>% 
+  mutate(deaths.per.1000 = cut(deaths.per.1000,
+                               c(min(deaths.per.1000, na.rm = TRUE), 0.005, 0.01, 0.025, 0.05, 0.1, 0.2, max(deaths.per.1000, na.rm = TRUE)))) %>%
+  sf::st_transform(crs = "+proj=aea +lat_1=25 +lat_2=50 +lon_0=-100") %>% 
+  sf::st_cast("MULTIPOLYGON") %>%
+  plot_ly(split = ~metro, 
+          color = ~deaths.per.1000, 
+          colors = "YlOrRd", 
+          span = I(0.5),
+          stroke = I("gray50"),
+          alpha = 1,
+          text = ~paste0("</br>", metro, "</br>Deaths: ", deaths, "</br>Population: ", population, "</br>Deaths per Thousand: ", deaths.per.1000.tool.tip),
+          hoverinfo = "text",
+          hoveron = "fills") %>%
+  layout(title="",
+         showlegend = FALSE)
+
+
+fig4
+```
+
+<!-- ```{r, fig.align='center'} -->
+<!-- knitr::include_graphics("confirmed-deaths-color-scale.png") -->
+<!-- ``` -->
+
+<!-- **Pros of this measure:** Coronavirus deaths are much more likely to be accurately counted than total cases. -->
+
+<!-- **Cons:** Death rates depend on the underlying health and age of various communities. They also lag infections by several weeks, so they don’t tell us what’s happening now. -->
+
+
+## Sources
+
+
+Corona Data Scraper. Timeseries. 2020. Retrieved from <https://coronadatascraper.com/#home>
+
+New York Times. New York Times database of U.S. coronavirus cases. 2020. https://github.com/nytimes/covid-19-data.
+
+United States Census Bureau, County Population Totals: 2010-2019. 2019. Retrieved from <https://www.census.gov/data/tables/time-series/demo/popest/2010s-counties-total.html>
+
+United States Census Bureau. Delineation Files. 2018. Retrieved from <https://www.census.gov/geographies/reference-files/time-series/demo/metro-micro/delineation-files.html>
+
+United States Census Bureau. Cartographic Boundary Files. 2010. Retrieved from <https://www.census.gov/geographies/mapping-files/time-series/geo/carto-boundary-file.html>
+
+
+
+
+## Appendix: Calculating Average Daily Change
+
+Calculate "Average Daily Change in Total Cases, Over the Previous 7 Days" at time $t$ as
+
+$$
+\textrm{avg daily change}_t =  \left( \frac{\textrm{cases}_t}{\textrm{cases}_{t-7}} \right)^{(1/7)} - 1 
+$$
+
+which is a compound daily growth rate (see <https://en.wikipedia.org/wiki/Compound_annual_growth_rate>).  
+
+
+<!-- ## Appendix: R Code -->
+
+```{r appendix, ref.label=knitr::all_labels(),echo=TRUE,eval=FALSE}
+```
+
+
