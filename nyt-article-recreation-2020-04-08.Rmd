@@ -178,10 +178,14 @@ wi_metro_areas <-
 
 ```{r cds-data-world}
 ## Data from Corona Data Scraper on Lombardy and Hubei regions
-other_metroarea <- 
-  read.csv("https://coronadatascraper.com/timeseries-tidy.csv") %>% 
+temp <- tempfile()
+download.file("https://coronadatascraper.com/timeseries-tidy.csv.zip", temp)
+
+other_metroarea <-
+  read.csv(unz(temp, "timeseries-tidy.csv")) %>% 
+  # read.csv("https://coronadatascraper.com/timeseries-tidy.csv") %>% 
   as_tibble() %>% 
-  filter((country == "ITA" & state == "Lombardy") | (country == "CHN" & state == "Hubei"),
+  filter((country == "Italy" & state == "Lombardy") | (country == "China" & state == "Hubei"),
          type %in% c("cases", "deaths")) %>% 
   pivot_wider(names_from = "type",
               values_from = "value") %>% 
@@ -325,6 +329,7 @@ fig1 <- plot_ly(data = plot_data,
                # symbol = ~str_detect(metro_name, "WI"),
                text = ~paste0("</br>", metro_name,
                              "</br>", Date,
+                             "</br>Cases: ", Cases,
                              "</br>Daily Change: ", scales::percent(daily.change, accuracy = 0.1)),
                type = "scatter",
                mode = 'lines+markers',
