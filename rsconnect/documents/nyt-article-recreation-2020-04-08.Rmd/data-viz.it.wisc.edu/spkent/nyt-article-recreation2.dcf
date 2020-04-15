@@ -1,12 +1,12 @@
-name: nyt-article-recreation
+name: nyt-article-recreation2
 title: nyt-article-recreation
 username: spkent
 account: spkent
 server: data-viz.it.wisc.edu
 hostUrl: https://data-viz.it.wisc.edu/__api__
-appId: 17
-bundleId: 61
-url: https://data-viz.it.wisc.edu/content/17/
-when: 1586969533.68371
+appId: 25
+bundleId: 64
+url: https://data-viz.it.wisc.edu/content/25/
+when: 1586970287.70148
 asMultiple: FALSE
 asStatic: FALSE
