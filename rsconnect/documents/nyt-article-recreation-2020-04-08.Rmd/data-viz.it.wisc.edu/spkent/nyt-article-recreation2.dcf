@@ -5,8 +5,8 @@ account: spkent
 server: data-viz.it.wisc.edu
 hostUrl: https://data-viz.it.wisc.edu/__api__
 appId: 25
-bundleId: 64
-url: https://data-viz.it.wisc.edu/content/25/
-when: 1586970287.70148
+bundleId: 65
+url: https://data-viz.it.wisc.edu/wi-metro-growth-rate/
+when: 1586978661.98357
 asMultiple: FALSE
 asStatic: FALSE
