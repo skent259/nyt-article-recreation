@@ -256,7 +256,8 @@ fig1 <- plot_ly(data = plot_data,
                alpha = 0.7,
                hoverinfo = "text") %>% 
   layout(title = "") %>% 
-  layout(yaxis = list(range = c(0, 1),
+  layout(yaxis = list(title = "Average Daily Change (Last 7 Days)",
+                      range = c(0, 1),
                       tickformat = "%")) 
 
 fig1
@@ -321,7 +322,9 @@ fig2 <- plot_ly(data = plot_data,
                # alpha = 0.5,
                hoverinfo = "text") %>% 
   layout(title = "") %>% 
-  layout(yaxis = list(range = c(0, 1),
+  layout(xaxis = list(title = "Confirmed Cases Per Thousand People"),
+         yaxis = list(title = "Average Daily Change (Last 7 Days)",
+                      range = c(0, 1),
                       tickformat = "%")) 
 
 fig2
