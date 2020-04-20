@@ -1,7 +1,7 @@
 ---
-title: "Coronavirus in the U.S.: How Fast It’s Growing"
+title: "Coronavirus in the Wisconsin: How Fast It’s Growing"
 # author: "Srikanth Aravamuthan & Sean Kent"
-date: "Updated `r format(Sys.time(), '%B %d, %Y, %I:%M %p %Z')`"
+date: "Updated `r format(Sys.time(), '%B %d, %Y, %I:00 %p %Z')`"
 output: 
   html_document:
     code_folding: hide
@@ -338,7 +338,7 @@ fig2
 *This plot is interactive*: hover over a metropolitan area to see the exact counts, population, and per capita measurements. 
 
 
-`r htmltools::h4("Confirmed Cases per thousand residents")`
+`r htmltools::h4("Confirmed cases per thousand residents")`
 
 ```{r dpi = 96}
 ## US Metro Map (Cases)
@@ -374,6 +374,7 @@ fig3 <- county %>%
          showlegend = FALSE)
 
 fig3
+
 ```
 
 ```{r, fig.align='center'}
@@ -421,8 +422,8 @@ fig4 <- county %>%
   layout(title="",
          showlegend = FALSE)
 
-
 fig4
+
 ```
 
 ```{r, fig.align='center'}
@@ -439,7 +440,7 @@ knitr::include_graphics("confirmed-deaths-color-scale.png")
 
 Corona Data Scraper. Timeseries. 2020. Retrieved from <https://coronadatascraper.com/#home>
 
-New York Times. New York Times database of U.S. coronavirus cases. 2020. https://github.com/nytimes/covid-19-data.
+New York Times. New York Times database of U.S. coronavirus cases. 2020. Retrieved from <https://github.com/nytimes/covid-19-data>.
 
 United States Census Bureau, County Population Totals: 2010-2019. 2019. Retrieved from <https://www.census.gov/data/tables/time-series/demo/popest/2010s-counties-total.html>
 
