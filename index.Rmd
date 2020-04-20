@@ -438,15 +438,15 @@ knitr::include_graphics("confirmed-deaths-color-scale.png")
 ## Sources
 
 
-Corona Data Scraper. Timeseries. 2020. Retrieved from <https://coronadatascraper.com/#home>
+Corona Data Scraper. Timeseries. 2020. Retrieved from <https://coronadatascraper.com/#home>.
 
 New York Times. New York Times database of U.S. coronavirus cases. 2020. Retrieved from <https://github.com/nytimes/covid-19-data>.
 
-United States Census Bureau, County Population Totals: 2010-2019. 2019. Retrieved from <https://www.census.gov/data/tables/time-series/demo/popest/2010s-counties-total.html>
+United States Census Bureau, County Population Totals: 2010-2019. 2019. Retrieved from <https://www.census.gov/data/tables/time-series/demo/popest/2010s-counties-total.html>.
 
-United States Census Bureau. Delineation Files. 2018. Retrieved from <https://www.census.gov/geographies/reference-files/time-series/demo/metro-micro/delineation-files.html>
+United States Census Bureau. Delineation Files. 2018. Retrieved from <https://www.census.gov/geographies/reference-files/time-series/demo/metro-micro/delineation-files.html>.
 
-United States Census Bureau. Cartographic Boundary Files. 2010. Retrieved from <https://www.census.gov/geographies/mapping-files/time-series/geo/carto-boundary-file.html>
+United States Census Bureau. Cartographic Boundary Files. 2010. Retrieved from <https://www.census.gov/geographies/mapping-files/time-series/geo/carto-boundary-file.html>.
 
 
 
