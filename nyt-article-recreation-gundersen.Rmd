@@ -22,9 +22,12 @@ library(lubridate)
 library(zoo)
 library(readxl)
 library(maps)
-# library(sf)
+library(sf)
 library(plotly)
 library(shiny)
+
+library(maptools)
+library(rgeos)
 
 ```
 
@@ -100,6 +103,8 @@ gundersen <-
 
 ## Daily Growth Rate
 
+To assess the possible future of the outbreak, it’s helpful to look not just at the number of cases but also at how quickly they are increasing. The accompanying chart shows the growth rate of cumulative cases over time, averaged over the previous week.
+
 #### Daily growth rate of confirmed cases
 
 ```{r dpi = 96}
@@ -138,7 +143,21 @@ fig1
 
 ```
 
+*This plot is interactive*: Double click on a region in the legend to start a comparison and then single click on others to add or remove them from the comparison.  Note: double-clicking may not work well on all platforms, but you may single click on a region in the legend to remove from the comparison.  
+
+Here, we can see whether the trajectory of a local epidemic is getting better or worse. A growth rate of 40 percent on this chart means the cumulative number of cases is growing by 40 percent every day. A rate of 100 percent would mean that the number of cases is doubling daily.  Any growth rate above 0 percent means that there are still new daily cases.
+
+**Pros of this measure**: Growth rates help us judge whether the epidemic is getting better or worse in a given place right now.
+
+**Cons**: The timing of different outbreaks can make comparisons difficult. Case data quality varies a lot by place. Rates of change can vary significantly for counties with only a few cases.  
+
+
 ## Growth Rates by Case Count
+
+The chart below shows the growth rate by the number of cases or deaths in a given metropolitan area.  In this chart, the goal for each region is to reach 0 percent daily change (y-axis) as fast as possible, before the confirmed cases per thousand (x-axis) get too large.  As long as the daily change in cases is above zero, the region will continue to see an increase in confirmed cases, and the line will continue to move to the right.  High growth rates combined with a lot of confirmed cases are a bad combination and may cause health systems to be overwhelmed.
+
+This measurement shows whether a community has succeeded in slowing the rate of growth before there are many cases. In other words, it shows whether a community is succeeding at flattening the curve.
+
 
 #### Daily growth rate of confirmed cases
 
@@ -182,7 +201,13 @@ fig2
 
 ```
 
+**Pros of this measure**: Helps distinguish between places where cases are growing fast with few cases and places where cases are numerous and still growing fast.
+
+**Cons**: Hard to read at first. Relies on case data.
+
 ## New Cases by Case Count
+
+For some counties with a small number of cases, growth rates may be somewhat misleading.  A county with only 4 cases would have a 50% growth rate if it had 6 cases the next day.  In this case, the number of new cases might be more informative.  The accompanying chart shows a weekly average of new cases compared to the number of cases for various counties.  
 
 #### Weekly new cases
 
@@ -227,7 +252,13 @@ fig3
 
 ```
 
+**Pros of this measure**: Helps distinguish between places where cases are growing fast with few cases and places where cases are numerous and still growing fast.  Works well for counties with only a few cases.  
+
+**Cons**: Relies on case data.  It doesn't account for county population.
+
 ## New Cases per Capita by Case Count per Capita
+
+To understand how prevalent COVID-19 is within a given county, it's useful to look at the number of cases per person instead of the number of cases.  The accompanying chart is similar to the previous chart, but it shows new cases per 1,000 people living in the county compared to cases per 1,000 people living in the county.  
 
 #### Weekly new cases
 
@@ -273,6 +304,10 @@ fig4 <- plot_ly(data = plot_data,
 fig4
 
 ```
+
+**Pros of this measure**: Helps distinguish between places where cases are growing fast with few cases and places where cases are numerous and still growing fast.  Works well for counties with only a few cases.  
+
+**Cons**: Relies on case data.  Data may be volatile for counties with few people.  
 
 <!-- ## Concept Plots -->
 
@@ -442,6 +477,8 @@ fig4
 <!-- ``` -->
 
 ## Map of Gundersen Clinic Areas and Adjacent Counties
+
+*This plot is interactive*: hover over a metropolitan area to see the exact case counts, population, and per capita measurements. 
 
 #### Confirmed cases per thousand residents
 

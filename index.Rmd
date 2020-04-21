@@ -266,7 +266,7 @@ fig1
 
 *This plot is interactive*: Double click on a region in the legend to start a comparison and then single click on others to add or remove them from the comparison.  Note: double clicking may not work well on all platforms, but you may single click on a region in the legend to remove from comparison.  
 
-Here, we can see whether the trajectory of a local epidemic is getting better or worse. A growth rate of 40 percent on this chart means the cumulative number of cases is growing by 40 percent every day. A rate of 100 percent would mean that the number of cases was doubling daily.  Any growth rate above 0 percent means that there are still new daily cases
+Here, we can see whether the trajectory of a local epidemic is getting better or worse. A growth rate of 40 percent on this chart means the cumulative number of cases is growing by 40 percent every day. A rate of 100 percent would mean that the number of cases was doubling daily.  Any growth rate above 0 percent means that there are still new daily cases.
 
 **Pros of this measure**: Growth rates help us judge whether the epidemic is getting better or worse in a given place right now.
 
