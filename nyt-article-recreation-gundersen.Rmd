@@ -1,0 +1,587 @@
+---
+title: "Coronavirus in the Wisconsin: How Fast It's Growing"
+# author: "Srikanth Aravamuthan & Sean Kent"
+date: "Updated `r format(Sys.time(), '%B %d, %Y, %I:00 %p %Z')`"
+output: 
+  html_document:
+    code_folding: hide
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = FALSE,
+  # cache = TRUE, 
+  message = FALSE,
+  warning = FALSE, 
+  fig.width = 10
+)
+
+library(tidyverse)
+library(purrr)
+library(lubridate)
+library(zoo)
+library(readxl)
+library(maps)
+# library(sf)
+library(plotly)
+library(shiny)
+
+```
+
+
+
+```{r data choices}
+## Data choices
+MIN_CASES_TO_PLOT <- 30
+MIN_DATE <- Sys.Date() - 28 # last 4 weeks
+MAX_DATE <- Sys.Date()
+
+color_palette <- c(RColorBrewer::brewer.pal(21, "Paired"), rep("grey50", 20))
+```
+
+
+
+```{r nyt-data}
+# Data from the New York Times repository
+us_counties <- read_csv("https://raw.githubusercontent.com/nytimes/covid-19-data/master/us-counties.csv")
+us_states <- read_csv("https://raw.githubusercontent.com/nytimes/covid-19-data/master/us-states.csv")
+
+# NYT does this annoying thing where they count ("Kings", "Queens", "New York", "Bronx") counties 
+# as the 'county' New York City.  Attempt to fix by removing putting all of the cases/deaths in 
+# New York county, since we are aggregating by metro area anyways
+us_counties[us_counties$county == "New York City", "county"] <- "New York"
+
+```
+
+
+
+```{r population-data}
+## Population data from US census 2019 estimates
+county_population <- 
+  read_csv("https://www2.census.gov/programs-surveys/popest/datasets/2010-2019/counties/totals/co-est2019-alldata.csv") %>% 
+  filter(SUMLEV == "050") %>% 
+  mutate(CTYNAME = str_remove(CTYNAME, " County"),
+         CTYNAME = str_remove(CTYNAME, " Parish")) %>% 
+  rename(state = STNAME,
+         county = CTYNAME,
+         population = POPESTIMATE2019) %>% 
+  select(state, county, population)
+
+```
+
+
+
+```{r}
+gundersen <- 
+  us_counties %>% 
+  filter(county == "Adams" & state == "Wisconsin" |
+         county == "Buffalo" & state == "Wisconsin" |
+         county == "Crawford" & state == "Wisconsin" |
+         county == "Grant" & state == "Wisconsin" |
+         county == "Jackson" & state == "Wisconsin" |
+         county == "Juneau" & state == "Wisconsin" |
+         county == "La Crosse" & state == "Wisconsin" |
+         county == "Marquette" & state == "Wisconsin" |
+         county == "Monroe" & state == "Wisconsin" |
+         county == "Richland" & state == "Wisconsin" |
+         county == "Trempealeau" & state == "Wisconsin" |
+         county == "Vernon" & state == "Wisconsin" |
+         county == "Fillmore" & state == "Minnesota" |
+         county == "Houston" & state == "Minnesota" |
+         county == "Wabasha" & state == "Minnesota" |
+         county == "Winona" & state == "Minnesota" |
+         county == "Allamakee" & state == "Iowa" |
+         county == "Clayton" & state == "Iowa" |
+         county == "Fayette" & state == "Iowa" |
+         county == "Howard" & state == "Iowa" |
+         county == "Winneshiek" & state == "Iowa")
+  
+```
+
+## Daily Growth Rate
+
+#### Daily growth rate of confirmed cases
+
+```{r dpi = 96}
+plot_data <- 
+  gundersen %>% 
+  mutate(county.state = paste0(county,", ",state)) %>% 
+  group_by(county.state) %>% 
+  arrange(date) %>% 
+  mutate(daily.change = (cases / lag(cases, n = 7, default = NA))^(1 / 7) - 1 ) %>% 
+  ungroup() %>% 
+  mutate(`Average Daily Change (Last 7 Days)` = daily.change) %>% 
+  rename(Name = county.state,
+         Date = date,
+         Cases = cases) %>% 
+  filter(between(Date, MIN_DATE, MAX_DATE))
+
+fig1 <- plot_ly(data = plot_data,
+               x = ~Date,
+               y = ~`Average Daily Change (Last 7 Days)`,
+               color = ~Name,
+               text = ~paste0("</br>", Name,
+                             "</br>", Date,
+                             "</br>Daily Change: ", scales::percent(daily.change, accuracy = 0.1)),
+               type = "scatter",
+               mode = 'lines+markers',
+               colors = "Paired",
+               alpha = 0.7,
+               hoverinfo = "text") %>% 
+  layout(title = "") %>% 
+  layout(xaxis = list(title = "Date"),
+         yaxis = list(title = "Average Daily Change (Last 7 Days)",
+                      range = c(0, 1),
+                      tickformat = "%")) 
+
+fig1
+
+```
+
+## Growth Rates by Case Count
+
+#### Daily growth rate of confirmed cases
+
+```{r dpi = 96}
+plot_data <- 
+  gundersen %>% 
+  left_join(county_population, by = c("state", "county")) %>% 
+  mutate(county.state = paste0(county,", ",state)) %>% 
+  group_by(county.state) %>% 
+  arrange(date) %>% 
+  mutate(daily.change = (cases / lag(cases, n = 7, default = NA))^(1 / 7) - 1 ) %>% 
+  ungroup() %>% 
+  mutate(`Confirmed Cases Per Thousand People` = cases / population * 1000) %>% 
+  mutate(`Average Daily Change (Last 7 Days)` = daily.change) %>% 
+  rename(Name = county.state,
+         Date = date,
+         Cases = cases) %>% 
+  filter(between(Date, MIN_DATE, MAX_DATE))
+
+fig2 <- plot_ly(data = plot_data,
+               x = ~`Confirmed Cases Per Thousand People`,
+               y = ~`Average Daily Change (Last 7 Days)`,
+               color = ~Name,
+               text = ~paste0("</br>", Name,
+                             "</br>", Date,
+                             "</br>Cases Per Thousand: ", 
+                             round(`Confirmed Cases Per Thousand People`, 3), 
+                             "</br>Daily Change: ", scales::percent(daily.change, accuracy = 0.1)),
+               type = "scatter",
+               mode = 'lines+markers',
+               colors = "Paired",
+               # alpha = 0.5,
+               hoverinfo = "text") %>% 
+  layout(title = "") %>% 
+  layout(xaxis = list(title = "Confirmed Cases Per Thousand People"),
+         yaxis = list(title = "Average Daily Change (Last 7 Days)",
+                      range = c(0, 1),
+                      tickformat = "%")) 
+
+fig2
+
+```
+
+## New Cases by Case Count
+
+#### Weekly new cases
+
+```{r dpi = 96}
+plot_data <- 
+  gundersen %>% 
+  left_join(county_population, by = c("state", "county")) %>% 
+  mutate(county.state = paste0(county,", ",state)) %>% 
+  group_by(county.state) %>% 
+  arrange(date) %>% 
+  mutate(new.cases = cases - lag(cases, 
+                                 default = cases[1]),
+         roll.cases = rollapply(new.cases, 
+                                list(-(0:6)), 
+                                sum, 
+                                fill = NA, 
+                                align = "right", 
+                                partial = FALSE)) %>% 
+  ungroup() %>% 
+  mutate(`New Cases (Daily Average over Last 7 Days)` = roll.cases) %>% 
+  rename(Name = county.state,
+         Date = date,
+         Cases = cases) %>% 
+  filter(between(Date, MIN_DATE, MAX_DATE))
+
+fig3 <- plot_ly(data = plot_data,
+               x = ~Cases,
+               y = ~`New Cases (Daily Average over Last 7 Days)`,
+               color = ~Name,
+               text = ~paste0("</br>", Name,
+                             "</br>", Date,
+                             "</br>Cases: ", Cases, 
+                             "</br>New Cases (Daily Average over Last 7 Days): ", `New Cases (Daily Average over Last 7 Days)`),
+               type = "scatter",
+               mode = 'lines+markers',
+               colors = "Paired",
+               # alpha = 0.5,
+               hoverinfo = "text") %>% 
+  layout(yaxis = list(title = "New Cases (Daily Average over Last 7 Days)"))
+
+fig3
+
+```
+
+## New Cases per Capita by Case Count per Capita
+
+#### Weekly new cases
+
+```{r dpi = 96}
+plot_data <- 
+  gundersen %>% 
+  left_join(county_population, by = c("state", "county")) %>% 
+  mutate(county.state = paste0(county,", ",state)) %>% 
+  group_by(county.state) %>% 
+  arrange(date) %>% 
+  mutate(new.cases = cases - lag(cases, 
+                                 default = cases[1]),
+         roll.cases = rollapply(new.cases, 
+                                list(-(0:6)), 
+                                sum, 
+                                fill = NA, 
+                                align = "right", 
+                                partial = FALSE)) %>% 
+  ungroup() %>% 
+  mutate(`New Cases Per Thousand People (Daily Average over Last 7 Days)` = round(roll.cases / population * 1000, 3)) %>% 
+  mutate(`Cases Per Thousand People` = round(cases / population * 1000, 3)) %>% 
+  rename(Name = county.state,
+         Date = date,
+         Cases = cases) %>% 
+  filter(between(Date, MIN_DATE, MAX_DATE))
+
+fig4 <- plot_ly(data = plot_data,
+               x = ~`Cases Per Thousand People`,
+               y = ~`New Cases Per Thousand People (Daily Average over Last 7 Days)`,
+               color = ~Name,
+               text = ~paste0("</br>", Name,
+                             "</br>", Date,
+                             "</br>Cases Per Thousand: ", `Cases Per Thousand People`, 
+                             "</br>New Cases Per Thousand </br>(Daily Average over Last 7 Days): ", `New Cases Per Thousand People (Daily Average over Last 7 Days)`),
+               type = "scatter",
+               mode = 'lines+markers',
+               colors = "Paired",
+               # alpha = 0.5,
+               hoverinfo = "text") %>% 
+  layout(xaxis = list(title = "Cases Per Thousand People"),
+         yaxis = list(title = "New Cases Per Thousand People (Daily Average over Last 7 Days)"))
+
+fig4
+
+```
+
+<!-- ## Concept Plots -->
+
+<!-- ```{r dpi = 96} -->
+<!-- plot_data <-  -->
+<!--   gundersen %>%  -->
+<!--   left_join(county_population, by = c("state", "county")) %>%  -->
+<!--   mutate(county.state = paste0(county,", ",state)) %>%  -->
+<!--   group_by(county.state) %>%  -->
+<!--   arrange(date) %>%  -->
+<!--   mutate(new.cases = cases - lag(cases,  -->
+<!--                                  default = cases[1]), -->
+<!--          roll.cases = rollapply(new.cases,  -->
+<!--                                 list(-(0:6)),  -->
+<!--                                 sum,  -->
+<!--                                 fill = NA,  -->
+<!--                                 align = "right",  -->
+<!--                                 partial = FALSE)) %>%  -->
+<!--   ungroup() %>%  -->
+<!--   mutate(`New Cases Per Thousand People (Daily Average over Last 7 Days)` = round(roll.cases / population * 1000, 3)) %>%  -->
+<!--   rename(Name = county.state, -->
+<!--          Date = date, -->
+<!--          Cases = cases) %>%  -->
+<!--   filter(between(Date, MIN_DATE, MAX_DATE)) -->
+
+<!-- fig5 <- plot_ly(data = plot_data, -->
+<!--                x = ~Cases, -->
+<!--                y = ~`New Cases Per Thousand People (Daily Average over Last 7 Days)`, -->
+<!--                color = ~Name, -->
+<!--                text = ~paste0("</br>", Name, -->
+<!--                              "</br>", Date, -->
+<!--                              "</br>Cases: ", Cases,  -->
+<!--                              "</br>New Cases Per Thousand </br>(Daily Average over Last 7 Days): ", `New Cases Per Thousand People (Daily Average over Last 7 Days)`), -->
+<!--                type = "scatter", -->
+<!--                mode = 'lines+markers', -->
+<!--                colors = "Paired", -->
+<!--                # alpha = 0.5, -->
+<!--                hoverinfo = "text") %>%  -->
+<!--   layout(title = "") -->
+
+<!-- fig5 -->
+
+<!-- ``` -->
+
+<!-- ```{r dpi = 96} -->
+<!-- plot_data <-  -->
+<!--   gundersen %>%  -->
+<!--   left_join(county_population, by = c("state", "county")) %>%  -->
+<!--   mutate(county.state = paste0(county,", ",state)) %>%  -->
+<!--   group_by(county.state) %>%  -->
+<!--   arrange(date) %>%  -->
+<!--   mutate(new.cases = cases - lag(cases,  -->
+<!--                                  default = cases[1]), -->
+<!--          roll.cases = rollapply(new.cases,  -->
+<!--                                 list(-(0:6)),  -->
+<!--                                 sum,  -->
+<!--                                 fill = NA,  -->
+<!--                                 align = "right",  -->
+<!--                                 partial = FALSE)) %>%  -->
+<!--   ungroup() %>%  -->
+<!--   mutate(`New Cases (Daily Average over Last 7 Days)` = roll.cases) %>%  -->
+<!--   rename(Name = county.state, -->
+<!--          Date = date, -->
+<!--          Cases = cases) %>%  -->
+<!--   filter(between(Date, MIN_DATE, MAX_DATE)) -->
+
+<!-- fig6 <- plot_ly(data = plot_data, -->
+<!--                x = ~Date, -->
+<!--                y = ~`New Cases (Daily Average over Last 7 Days)`, -->
+<!--                color = ~Name, -->
+<!--                text = ~paste0("</br>", Name, -->
+<!--                              "</br>", Date, -->
+<!--                              "</br>Cases: ", Cases,  -->
+<!--                              "</br>New Cases (Daily Average over Last 7 Days): ", `New Cases (Daily Average over Last 7 Days)`), -->
+<!--                type = "scatter", -->
+<!--                mode = 'lines+markers', -->
+<!--                colors = "Paired", -->
+<!--                # alpha = 0.5, -->
+<!--                hoverinfo = "text") %>%  -->
+<!--   layout(title = "") -->
+
+<!-- fig6 -->
+
+<!-- ``` -->
+
+<!-- ```{r dpi = 96} -->
+<!-- plot_data <-  -->
+<!--   gundersen %>%  -->
+<!--   left_join(county_population, by = c("state", "county")) %>%  -->
+<!--   mutate(county.state = paste0(county,", ",state)) %>%  -->
+<!--   group_by(county.state) %>%  -->
+<!--   arrange(date) %>%  -->
+<!--   mutate(new.cases = cases - lag(cases,  -->
+<!--                                  default = cases[1]), -->
+<!--          roll.cases = rollapply(new.cases,  -->
+<!--                                 list(-(0:6)),  -->
+<!--                                 sum,  -->
+<!--                                 fill = NA,  -->
+<!--                                 align = "right",  -->
+<!--                                 partial = FALSE)) %>%  -->
+<!--   ungroup() %>%  -->
+<!--   mutate(`New Cases Per Thousand People (Daily Average over Last 7 Days)` = round(roll.cases / population * 1000, 3)) %>%  -->
+<!--   rename(Name = county.state, -->
+<!--          Date = date, -->
+<!--          Cases = cases) %>%  -->
+<!--   filter(between(Date, MIN_DATE, MAX_DATE)) -->
+
+<!-- fig7 <- plot_ly(data = plot_data, -->
+<!--                x = ~Date, -->
+<!--                y = ~`New Cases Per Thousand People (Daily Average over Last 7 Days)`, -->
+<!--                color = ~Name, -->
+<!--                text = ~paste0("</br>", Name, -->
+<!--                              "</br>", Date, -->
+<!--                              "</br>Cases: ", Cases,  -->
+<!--                              "</br>New Cases Per Thousand </br>(Daily Average over Last 7 Days): ", `New Cases Per Thousand People (Daily Average over Last 7 Days)`), -->
+<!--                type = "scatter", -->
+<!--                mode = 'lines+markers', -->
+<!--                colors = "Paired", -->
+<!--                # alpha = 0.5, -->
+<!--                hoverinfo = "text") %>%  -->
+<!--   layout(title = "") -->
+
+<!-- fig7 -->
+
+<!-- ``` -->
+
+<!-- ```{r dpi = 96} -->
+<!-- plot_data <-  -->
+<!--   gundersen %>%  -->
+<!--   left_join(county_population, by = c("state", "county")) %>%  -->
+<!--   mutate(county.state = paste0(county,", ",state)) %>%  -->
+<!--   group_by(county.state) %>%  -->
+<!--   arrange(date) %>%  -->
+<!--   mutate(new.cases = cases - lag(cases,  -->
+<!--                                  default = cases[1]), -->
+<!--          roll.cases = rollapply(new.cases,  -->
+<!--                                 list(-(0:6)),  -->
+<!--                                 sum,  -->
+<!--                                 fill = NA,  -->
+<!--                                 align = "right",  -->
+<!--                                 partial = FALSE)) %>%  -->
+<!--   ungroup() %>%  -->
+<!--   mutate(`New Cases (Daily Average over Last 7 Days)` = roll.cases) %>%  -->
+<!--   mutate(`Cases Per Thousand People` = round(cases / population * 1000, 3)) %>%  -->
+<!--   rename(Name = county.state, -->
+<!--          Date = date, -->
+<!--          Cases = cases) %>%  -->
+<!--   filter(between(Date, MIN_DATE, MAX_DATE)) -->
+
+<!-- fig8 <- plot_ly(data = plot_data, -->
+<!--                x = ~`Cases Per Thousand People`, -->
+<!--                y = ~`New Cases (Daily Average over Last 7 Days)`, -->
+<!--                color = ~Name, -->
+<!--                text = ~paste0("</br>", Name, -->
+<!--                              "</br>", Date, -->
+<!--                              "</br>Cases Per Thousand: ", `Cases Per Thousand People`,  -->
+<!--                              "</br>New Cases (Daily Average over Last 7 Days): ", `New Cases (Daily Average over Last 7 Days)`), -->
+<!--                type = "scatter", -->
+<!--                mode = 'lines+markers', -->
+<!--                colors = "Paired", -->
+<!--                # alpha = 0.5, -->
+<!--                hoverinfo = "text") %>%  -->
+<!--   layout(title = "") -->
+
+<!-- fig8 -->
+
+<!-- ``` -->
+
+## Map of Gundersen Clinic Areas and Adjacent Counties
+
+#### Confirmed cases per thousand residents
+
+```{r}
+county <-
+  maps::map("county", plot = FALSE, fill = TRUE) %>%
+  sf::st_as_sf() %>%
+  separate(ID, c("state", "county"), ",") %>%
+  filter(state %in% c("wisconsin","minnesota","iowa","illinois")) %>% 
+  mutate(state = tools::toTitleCase(state),
+         county = tools::toTitleCase(county))
+
+county_adjacency <- 
+  read_tsv("https://www2.census.gov/geo/docs/reference/county_adjacency.txt",
+               col_names = FALSE) %>% 
+  fill(X1:X2) %>% 
+  separate(X1, c("county", "state"), ", ") %>% 
+  separate(X3, c("county.adjacent", "state.adjacent"), ", ") %>% 
+  rename(fips = X2,
+         fips.adjacent = X4)
+
+county_adjacency <- 
+  county_adjacency %>% 
+  filter(county == "Adams County" & state == "WI" |
+         county == "Buffalo County" & state == "WI" |
+         county == "Crawford County" & state == "WI" |
+         county == "Grant County" & state == "WI" |
+         county == "Jackson County" & state == "WI" |
+         county == "Juneau County" & state == "WI" |
+         county == "La Crosse County" & state == "WI" |
+         county == "Marquette County" & state == "WI" |
+         county == "Monroe County" & state == "WI" |
+         county == "Richland County" & state == "WI" |
+         county == "Trempealeau County" & state == "WI" |
+         county == "Vernon County" & state == "WI" |
+         county == "Fillmore County" & state == "MN" |
+         county == "Houston County" & state == "MN" |
+         county == "Wabasha County" & state == "MN" |
+         county == "Winona County" & state == "MN" |
+         county == "Allamakee County" & state == "IA" |
+         county == "Clayton County" & state == "IA" |
+         county == "Fayette County" & state == "IA" |
+         county == "Howard County" & state == "IA" |
+         county == "Winneshiek County" & state == "IA") %>% 
+  select(county.adjacent, state.adjacent) %>% 
+  rename(county = county.adjacent,
+         state = state.adjacent) %>% 
+  mutate(county = str_remove(county, " County"),
+         state = case_when(
+           state == "WI" ~ "Wisconsin", 
+           state == "MN" ~ "Minnesota", 
+           state == "IA" ~ "Iowa", 
+           state == "IL"  ~ "Illinois")
+         ) %>% 
+  distinct(county, state)
+
+gundersen_current_date <- 
+  us_counties %>% 
+  right_join(county_adjacency, by = c("county", "state")) %>% 
+  filter(date == max(date, na.rm = TRUE) | is.na(date)) %>% 
+  mutate(clinic.area = TRUE)
+
+```
+
+```{r dpi = 96}
+## US Metro Map (Cases)
+fig9 <- county %>%
+  left_join(gundersen_current_date, by = c("state", "county")) %>%
+  left_join(county_population, by = c("state", "county")) %>% 
+  # filter(!is.na(clinic.area)) %>%
+  mutate(name = ifelse(is.na(clinic.area), state, paste0(county, ", ", state))) %>% 
+  group_by(name) %>%
+  summarize(cases = sum(cases, na.rm = TRUE),
+            deaths = sum(deaths, na.rm = TRUE),
+            population = max(population, na.rm = TRUE),
+            geometry = sf::st_union(sf::st_buffer(geometry,0.0))) %>%
+  ungroup() %>%
+  mutate(cases.per.1000 = round(cases / (population / 1000), 3),
+         # cases.per.1000 = ifelse(cases.per.1000<=0.025, NA, cases.per.1000),
+         cases = ifelse(name %in% c("Wisconsin","Minnesota","Iowa","Illinois"), NA, cases),
+         population = ifelse(name %in% c("Wisconsin","Minnesota","Iowa","Illinois"), NA, population),
+         cases.per.1000 = ifelse(name %in% c("Wisconsin","Minnesota","Iowa","Illinois"), NA, cases.per.1000),
+         name = ifelse(name %in% c("Wisconsin","Minnesota","Iowa","Illinois"), paste0("Rest of ", name), name)) %>% 
+  mutate(cases.per.1000.tool.tip = cases.per.1000,
+         cases.per.1000.rank = rank(-cases.per.1000, na.last = "keep", ties.method = "min"),
+         cases.per.1000 = cut(cases.per.1000,
+                              c(min(cases.per.1000, na.rm = TRUE), 0.1, 0.25, 0.5, 1, 2, 4, max(cases.per.1000, na.rm = TRUE)))) %>%
+  # sf::st_transform(crs = "+proj=aea +lat_1=25 +lat_2=50 +lon_0=-100") %>% 
+  sf::st_cast("MULTIPOLYGON") %>%
+  plot_ly(split = ~name, 
+          color = ~cases.per.1000, 
+          colors = "YlGnBu", 
+          span = I(1),
+          stroke = I("gray50"),
+          alpha = 1,
+          text = ~paste0("</br>", name, 
+                         "</br>Cases: ", cases, 
+                         "</br>Population: ", population, 
+                         "</br>Cases per Thousand: ", cases.per.1000.tool.tip,
+                         " (", cases.per.1000.rank, " out of ", nrow(.)-4, ")"),
+          hoverinfo = "text",
+          hoveron = "fills") %>% 
+  layout(title="",
+         showlegend = FALSE) 
+# %>%
+#   colorbar(title = "Cases per Thousand")
+
+fig9
+
+```
+
+
+
+## Sources
+
+New York Times. New York Times database of U.S. coronavirus cases. 2020. Retrieved from <https://github.com/nytimes/covid-19-data>.
+
+United States Census Bureau, County Population Totals: 2010-2019. 2019. Retrieved from <https://www.census.gov/data/tables/time-series/demo/popest/2010s-counties-total.html>.
+
+United States Census Bureau, County Adjacency File. 2010. Retrieved from <https://www.census.gov/geographies/reference-files/2010/geo/county-adjacency.html>.
+
+## Appendix: Calculating Average Daily Change
+
+Calculate "Average Daily Change in Total Cases, Over the Previous 7 Days" at time $t$ as
+
+$$
+\textrm{avg daily change}_t =  \left( \frac{\textrm{cases}_t}{\textrm{cases}_{t-7}} \right)^{(1/7)} - 1 
+$$
+
+## Appendix: Calculating New Cases (Daily Average over Last 7 Days)
+
+Calculate "New Cases (Daily Average over Last 7 Days)" at time $t$ as
+
+$$
+\textrm{new cases}_t =  \frac{1}{7}\left( \textrm{cases}_t-\textrm{cases}_{t-7}\right)
+$$
+
+
+
+<!-- ## Appendix: R Code -->
+
+```{r appendix, ref.label=knitr::all_labels(),echo=TRUE,eval=FALSE}
+```
