@@ -433,6 +433,14 @@ knitr::include_graphics("confirmed-deaths-color-scale.png")
 
 **Cons:** Death rates depend on the underlying health and age of various communities. They also lag infections by several weeks, so they don’t tell us what’s happening now.
 
+## Contact
+
+We encourage suggestions of new features and improvements to make the visualizations more useful.  The authors can be contacted below.
+
+- Srikanth Aravamuthan (<aravamuthan@wisc.edu>)
+- Steve Goldstein (<sgoldstein@wisc.edu>)
+- Sean Kent (<spkent@wisc.edu>)
+
 
 ## Sources
 
