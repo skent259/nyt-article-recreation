@@ -1,5 +1,5 @@
 ---
-title: "Coronavirus in the Wisconsin: How Fast It's Growing"
+title: "Coronavirus in Areas Served by Gundersen Clinic"
 # author: "Srikanth Aravamuthan & Sean Kent"
 date: "Updated `r format(Sys.time(), '%B %d, %Y, %I:00 %p %Z')`"
 output: 
