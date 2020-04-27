@@ -195,13 +195,17 @@ other_metroarea <-
 
 ## Summary
 
-#### This week (4/16/2020)
+#### This week (4/22/2020)
+
+Looking at daily growth rates of confirmed cases, the Green Bay metro area far outpaces any other Wisconsin metro area.  Confirmed cases in Green Bay are growing around 17-20% each day and confirmed cases have increased from 105 cases on April 14 to 327 on April 21.  Green Bay has about 1 confirmed case per thousand residents, which is the second-highest in Wisconsin metro areas (Milwaukee is the highest at 1.7 confirmed cases per thousand).  All other Wisconsin metro areas are showing daily growth rates between 0% and 5%.  Oshkosh-Neenah, Racine, and Janesville-Beloit are on the higher end of that range, with growth rates between 4.5% and 5.0% each day.  Racine now has the third-highest confirmed cases per thousand, around 0.94.  Madison recently saw a small uptick in growth rate, with 18 new cases from April 21 to April 22 (compared to less than 10 in previous days), but this may be tied to an increase in testing across the state (which can be seen on the [Wisconsin DHS website](https://www.dhs.wisconsin.gov/covid-19/data.htm#laboratory-testing-capacity))  
+
+#### Last week (4/16/2020)
 
 Current daily growth rates of confirmed cases in Wisconsin metro areas range between 1.5% and 14%. Many metro areas (Milwaukee, Madison, Fond du Lac, Sheboygan, Appleton, Eau Claire) are seeing a slow decline in growth rates, but in all of those areas, confirmed cases are still growing.  Green Bay and Racine are among the highest growth rate metro areas with 13.6% growth and 10.8% growth, respectively, on 4/14.  More concerning is that these growth rates have been stable over the last week and not decreasing as many of the other metro areas have been.  Milwaukee has 1.4 confirmed cases per thousand residents, highest among Wisconsin metro areas.  Racine now has the second-highest confirmed cases per thousand residents at 0.68.  
 
-#### Last Week (4/8/2020)
+<!-- #### Last Week (4/8/2020) -->
 
-Daily growth rates of confirmed cases offer a look at the future growth of the disease and can help measure whether a metropolitan area is "flattening the curve".  Among Wisconsin metro areas with at least 30 cases, Madison has the lowest growth rates of confirmed cases (6-7\% since April 4th).  Most other Wisconsin metro areas range between 9\% and 15\% growth, signaling a reduction from the mid-March growth rates which ranged between 30\% and 80\% for Madison and Milwaukee.  Green Bay recently reached 30 confirmed cases, but their early growth rate is much higher than others in Wisconsin.  Looking at the extent of the pandemic in terms of confirmed cases per thousand, Wisconsin metro areas are faring much better than epicenters like New York (8 cases per thousand) and New Orleans (7.8 cases per thousand).  The highest in Wisconsin is Milwaukee with less than 1 case per thousand.  However, the epicenters are further along in pandemic, and as long as growth rates remain positive, the situation will continue to worsen.  
+<!-- Daily growth rates of confirmed cases offer a look at the future growth of the disease and can help measure whether a metropolitan area is "flattening the curve".  Among Wisconsin metro areas with at least 30 cases, Madison has the lowest growth rates of confirmed cases (6-7\% since April 4th).  Most other Wisconsin metro areas range between 9\% and 15\% growth, signaling a reduction from the mid-March growth rates which ranged between 30\% and 80\% for Madison and Milwaukee.  Green Bay recently reached 30 confirmed cases, but their early growth rate is much higher than others in Wisconsin.  Looking at the extent of the pandemic in terms of confirmed cases per thousand, Wisconsin metro areas are faring much better than epicenters like New York (8 cases per thousand) and New Orleans (7.8 cases per thousand).  The highest in Wisconsin is Milwaukee with less than 1 case per thousand.  However, the epicenters are further along in pandemic, and as long as growth rates remain positive, the situation will continue to worsen.   -->
 
 
 
