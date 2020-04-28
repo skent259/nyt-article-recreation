@@ -711,7 +711,8 @@ fig4
 - Updates daily each afternoon with new data
 - Hosting on new platform never easy, plenty of time and energy goes into these sorts of things
 - Really matters to have a professional, public-facing way to display the results
---
+
+---
 
 # Wisconsin Dept. of Health Services
 
