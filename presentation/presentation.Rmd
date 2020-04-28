@@ -1,7 +1,9 @@
 ---
 title: "Coronavirus in the Wisconsin: How Fast It's Growing"
 subtitle: "<html><div style='float:left'></div><hr color='#EB811B' size=1px width=796px></html>"
-author: Srikanth Aravamuthan & Sean Kent
+author: 
+  - "Srikanth Aravamuthan & Sean Kent"
+  - "AFI DSI COVID-19 Research Group"
 date: "April 30, 2020"
 output: 
   xaringan::moon_reader:
@@ -29,6 +31,10 @@ library(maps)
 library(sf)
 library(plotly)
 library(shiny)
+
+# extra packages required by 'sf'
+library(rgeos)
+library(maptools)
 
 ```
 
@@ -84,7 +90,7 @@ Goal: [Goal]
 # Data Sources [Used]
 
 - Corona Data Scraper Timeseries
-- New York Times database of U.S. coronavirus cases
+- New York Times Database of U.S. Coronavirus Cases
 - United States Census Bureau County Population Totals
 - United States Census Bureau Delineation Files
 - United States Census Bureau Cartographic Boundary Files
@@ -301,29 +307,323 @@ fig1
 
 [Sean]
 
+```{r data choices}
+## Data choices
+MIN_CASES_TO_PLOT <- 30
+MIN_DATE <- Sys.Date() - 28 # last 4 weeks
+MAX_DATE <- Sys.Date()
+color_palette <- c(RColorBrewer::brewer.pal(12, "Paired"), rep("grey50", 20))
+```
+
+```{r nyt-data}
+# Data from the New York Times repository
+us_counties <- read_csv("https://raw.githubusercontent.com/nytimes/covid-19-data/master/us-counties.csv")
+us_states <- read_csv("https://raw.githubusercontent.com/nytimes/covid-19-data/master/us-states.csv")
+# NYT does this annoying thing where they count ("Kings", "Queens", "New York", "Bronx") counties 
+# as the 'county' New York City.  Attempt to fix by removing putting all of the cases/deaths in 
+# New York county, since we are aggregating by metro area anyways
+us_counties[us_counties$county == "New York City", "county"] <- "New York"
+```
+
+```{r population-data}
+## Population data from US census 2019 estimates
+county_population <- 
+  read_csv("https://www2.census.gov/programs-surveys/popest/datasets/2010-2019/counties/totals/co-est2019-alldata.csv") %>% 
+  filter(SUMLEV == "050") %>% 
+  mutate(CTYNAME = str_remove(CTYNAME, " County"),
+         CTYNAME = str_remove(CTYNAME, " Parish")) %>% 
+  rename(state = STNAME,
+         county = CTYNAME,
+         population = POPESTIMATE2019) %>% 
+  select(state, county, population)
+```
+
+```{r metro-data}
+## Census core based statistical area data
+temp <- tempfile(fileext = ".xls")
+url <- "https://www2.census.gov/programs-surveys/metro-micro/geographies/reference-files/2018/delineation-files/list1_Sep_2018.xls"
+download.file(url, destfile = temp, mode = "wb")
+metro <- 
+  read_xls(temp, skip = 2) %>% 
+  mutate(`County/County Equivalent` = str_remove(`County/County Equivalent`, " County"),
+         `County/County Equivalent` = str_remove(`County/County Equivalent`, " Parish")) %>% 
+  rename(state = `State Name`,
+         county = `County/County Equivalent`,
+         metro = `CBSA Title`,
+         area_type = `Metropolitan/Micropolitan Statistical Area`) %>% 
+  select(state, county, metro, area_type)
+## Total population by CBSA
+metro_pop <- 
+  county_population %>% 
+  left_join(metro, by = c("state", "county")) %>% 
+  # metro %>% 
+  # left_join(county_population, by = c("state", "county")) %>% 
+  group_by(metro) %>% 
+  mutate(metro_population = sum(population, na.rm = TRUE)) %>% 
+  ungroup()
+```
+
+```{r combine-data}
+## Sum county totals by metro area
+us_metroarea <- 
+  us_counties %>% 
+  left_join(metro_pop, by = c("state", "county")) %>% 
+  group_by(metro, date) %>%
+  summarize(cases = sum(cases, na.rm = TRUE),
+            deaths = sum(deaths, na.rm = TRUE),
+            population = max(metro_population, na.rm = TRUE)) %>% 
+  ungroup() 
+us_metroarea <- 
+  us_metroarea %>% 
+  mutate(metro_name = case_when(
+    metro == "Chicago-Naperville-Elgin, IL-IN-WI" ~ "Chicago", 
+    metro == "Minneapolis-St. Paul-Bloomington, MN-WI" ~ "Minneapolis", 
+    metro == "Milwaukee-Waukesha, WI" ~ "Milwaukee, WI", 
+    metro == "Madison, WI"  ~ "Madison, WI",
+    metro == "Green Bay, WI" ~ "Green Bay, WI",
+    metro == "Duluth, MN-WI" ~ "Duluth, MN-WI",
+    metro == "Appleton, WI" ~ "Appleton, WI",
+    metro == "Racine, WI" ~ "Racine, WI",
+    metro == "Oshkosh-Neenah, WI" ~ "Oshkosh-Neenah, WI",
+    metro == "Eau Claire, WI" ~ "Eau Claire, WI",
+    metro == "Janesville-Beloit, WI" ~ "Janesville-Beloit, WI",
+    metro == "Wausau-Weston, WI" ~ "Wausau-Weston, WI",
+    metro == "La Crosse-Onalaska, WI-MN" ~ "La Crosse-Onalaska, WI-MN",
+    metro == "Sheboygan, WI" ~ "Sheboygan, WI",
+    metro == "Fond du Lac, WI" ~ "Fond du Lac, WI",
+    metro == "New York-Newark-Jersey City, NY-NJ-PA" ~ "New York",
+    metro == "New Orleans-Metairie, LA" ~ "New Orleans",
+    TRUE ~ NA_character_
+  ))
+# Note: this has problems with Kansas City, MO, Dona Ana, NM, and "Unknown" counties
+# These aren't currently relevant to the analysis
+```
+
+```{r county-map-data}
+county <- 
+  maps::map("county", plot = FALSE, fill = TRUE) %>% 
+  sf::st_as_sf() %>% 
+  separate(ID, c("state", "county"), ",") %>% 
+  mutate(state = tools::toTitleCase(state),
+         county = tools::toTitleCase(county)) 
+us_counties_current_date <- 
+  us_counties %>% 
+  filter(date == max(date))
+us_metro_current_date <- 
+  us_counties %>% 
+  left_join(metro_pop, by = c("state", "county")) %>% 
+  filter(date == max(date))
+```
+
+```{r wi-metro}
+wi_metro_areas <- 
+  metro_pop %>% 
+  filter(state == "Wisconsin", str_detect(area_type, "Metropolitan")) %>% 
+  select(metro, metro_population) %>% 
+  unique() %>% 
+  arrange(desc(metro_population))
+```
+
+```{r cds-data-world}
+## Data from Corona Data Scraper on Lombardy and Hubei regions
+temp <- tempfile()
+download.file("https://coronadatascraper.com/timeseries-tidy.csv.zip", temp)
+other_metroarea <-
+  read.csv(unz(temp, "timeseries-tidy.csv")) %>% 
+  # read.csv("https://coronadatascraper.com/timeseries-tidy.csv") %>% 
+  as_tibble() %>% 
+  filter((country == "Italy" & state == "Lombardy") | (country == "China" & state == "Hubei"),
+         type %in% c("cases", "deaths")) %>% 
+  pivot_wider(names_from = "type",
+              values_from = "value") %>% 
+  mutate(metro_name = name) %>% 
+  select(metro = name, date, cases, deaths, population, metro_name) 
+```
+
 ---
 
 # Daily Growth Rate
 
-[Plot 1]
+```{r}
+## Daily growth rate chart
+plot_data <-
+  rbind(us_metroarea,
+        other_metroarea) %>% 
+  filter(!is.na(metro_name)) %>% 
+  group_by(metro) %>% 
+  mutate(daily.change = (cases / lag(cases, n = 7, default = NA))^(1 / 7) - 1 ) %>% 
+  ungroup() %>% 
+  mutate(`Average Daily Change (Last 7 Days)` = daily.change) %>% 
+  mutate(`Average Daily Change (Last 7 Days)` = ifelse(is.nan(`Average Daily Change (Last 7 Days)`), 0, `Average Daily Change (Last 7 Days)`)) %>% 
+  rename(Name = metro,
+         Date = date,
+         Cases = cases) %>% 
+  filter(Cases > MIN_CASES_TO_PLOT) %>% 
+  filter(between(Date, MIN_DATE, MAX_DATE)) # for comparison
+
+plot_data_ends <-
+  plot_data %>% 
+  filter(!is.na(daily.change)) %>%
+  # filter(!str_detect(metro_name, "WI")) %>% 
+  group_by(Name) %>% 
+  top_n(1, Date) 
+
+fig1 <- plot_ly(data = plot_data,
+               x = ~Date,
+               y = ~`Average Daily Change (Last 7 Days)`,
+               color = ~metro_name,
+               # symbol = ~str_detect(metro_name, "WI"),
+               text = ~paste0("</br>", metro_name,
+                             "</br>", Date,
+                             "</br>Cases: ", Cases,
+                             "</br>Daily Change: ", scales::percent(daily.change, accuracy = 0.1)),
+               type = "scatter",
+               mode = 'lines+markers',
+               colors = "Paired",
+               alpha = 0.7,
+               hoverinfo = "text") %>% 
+  layout(title = "") %>% 
+  layout(yaxis = list(title = "Average Daily Change (Last 7 Days)",
+                      range = c(0, 1),
+                      tickformat = "%")) 
+
+fig1
+
+```
 
 ---
 
 # Growth Rates by Case Count
 
-[Plot 2]
+```{r}
+## Growth Rates by Case Count
+plot_data <-
+  rbind(us_metroarea,
+        other_metroarea) %>% 
+  filter(!is.na(metro_name)) %>% 
+  group_by(metro) %>% 
+  mutate(daily.change = (cases / lag(cases, n = 7, default = NA))^(1 / 7) - 1 ) %>% 
+  ungroup() %>% 
+  # mutate(`Average Daily Change (Last 7 Days)` = round(roll.cases/cases/7*100,2)) %>% 
+  mutate(`Average Daily Change (Last 7 Days)` = daily.change) %>% 
+  mutate(`Average Daily Change (Last 7 Days)` = ifelse(is.nan(`Average Daily Change (Last 7 Days)`), 0, `Average Daily Change (Last 7 Days)`)) %>% 
+  mutate(`Confirmed Cases Per Thousand People` = cases / population * 1000) %>% 
+  rename(Name = metro,
+         Date = date,
+         Cases = cases) %>% 
+  filter(Cases > MIN_CASES_TO_PLOT) 
+
+plot_data_ends <-
+  plot_data %>%
+  group_by(Name) %>%
+  top_n(1, Date) 
+
+fig2 <- plot_ly(data = plot_data,
+               x = ~`Confirmed Cases Per Thousand People`,
+               y = ~`Average Daily Change (Last 7 Days)`,
+               color = ~metro_name,
+               # symbol = ~str_detect(metro_name, "WI"),
+               text = ~paste0("</br>", metro_name,
+                             "</br>", Date,
+                             "</br>Cases Per Thousand: ",
+                             round(`Confirmed Cases Per Thousand People`, 3), 
+                             "</br>Daily Change: ", scales::percent(daily.change, accuracy = 0.1)),
+               type = "scatter",
+               mode = 'lines+markers',
+               colors = "Paired",
+               # alpha = 0.5,
+               hoverinfo = "text") %>% 
+  layout(title = "") %>% 
+  layout(xaxis = list(title = "Confirmed Cases Per Thousand People"),
+         yaxis = list(title = "Average Daily Change (Last 7 Days)",
+                      range = c(0, 1),
+                      tickformat = "%")) 
+
+fig2
+
+```
 
 ---
 
 # Maps of Metro Areas
 
-[Plot 3]
+```{r}
+## US Metro Map (Cases)
+fig3 <- county %>%
+  left_join(us_metro_current_date, by = c("state", "county")) %>%
+  # left_join(county_population, by = c("state", "county")) %>% 
+  # filter(!is.na(metro)) %>%
+  group_by(metro) %>%
+  summarize(cases = sum(cases, na.rm = TRUE),
+            deaths = sum(deaths, na.rm = TRUE),
+            population = max(metro_population, na.rm = TRUE),
+            geometry = sf::st_union(sf::st_buffer(geometry,0.0))) %>% 
+  ungroup() %>%
+  mutate(metro = ifelse(is.na(metro), "Rest of United States", metro)) %>%
+  mutate(cases.per.1000 = round(cases / (population / 1000), 3),
+         cases.per.1000.tool.tip = cases.per.1000,
+         cases.per.1000 = ifelse(cases.per.1000<=0.025, NA, cases.per.1000),
+         cases.per.1000 = ifelse(metro=="Rest of United States", NA, cases.per.1000)) %>% 
+  mutate(cases.per.1000 = cut(cases.per.1000,
+                              c(min(cases.per.1000, na.rm = TRUE), 0.1, 0.25, 0.5, 1, 2, 4, max(cases.per.1000, na.rm = TRUE)))) %>%
+  sf::st_transform(crs = "+proj=aea +lat_1=25 +lat_2=50 +lon_0=-100") %>% 
+  sf::st_cast("MULTIPOLYGON") %>%
+  plot_ly(split = ~metro, 
+          color = ~cases.per.1000, 
+          colors = "YlGnBu", 
+          span = I(0.5),
+          stroke = I("gray50"),
+          alpha = 1,
+          text = ~paste0("</br>", metro, "</br>Cases: ", cases, "</br>Population: ", population, "</br>Cases per Thousand: ", cases.per.1000.tool.tip),
+          hoverinfo = "text",
+          hoveron = "fills") %>%
+  layout(title="",
+         showlegend = FALSE)
+
+fig3
+
+```
 
 ---
 
 # Maps of Metro Areas
 
-[Plot 4]
+```{r}
+## US Metro Map (Deaths)
+fig4 <- county %>%
+  left_join(us_metro_current_date, by = c("state", "county")) %>%
+  # left_join(county_population, by = c("state", "county")) %>% 
+  # filter(!is.na(metro)) %>%
+  group_by(metro) %>%
+  summarize(cases = sum(cases, na.rm = TRUE),
+            deaths = sum(deaths, na.rm = TRUE),
+            population = max(metro_population, na.rm = TRUE),
+            geometry = sf::st_union(sf::st_buffer(geometry,0.0))) %>% 
+  ungroup() %>%
+  mutate(metro = ifelse(is.na(metro), "Rest of United States", metro)) %>%
+  mutate(deaths.per.1000 = round(deaths / (population / 1000), 3),
+         deaths.per.1000.tool.tip = deaths.per.1000,
+         deaths.per.1000 = ifelse(deaths.per.1000<=0.001, NA, deaths.per.1000),
+         deaths.per.1000 = ifelse(metro=="Rest of United States", NA, deaths.per.1000)) %>% 
+  mutate(deaths.per.1000 = cut(deaths.per.1000,
+                               c(min(deaths.per.1000, na.rm = TRUE), 0.005, 0.01, 0.025, 0.05, 0.1, 0.2, max(deaths.per.1000, na.rm = TRUE)))) %>%
+  sf::st_transform(crs = "+proj=aea +lat_1=25 +lat_2=50 +lon_0=-100") %>% 
+  sf::st_cast("MULTIPOLYGON") %>%
+  plot_ly(split = ~metro, 
+          color = ~deaths.per.1000, 
+          colors = "YlOrRd", 
+          span = I(0.5),
+          stroke = I("gray50"),
+          alpha = 1,
+          text = ~paste0("</br>", metro, "</br>Deaths: ", deaths, "</br>Population: ", population, "</br>Deaths per Thousand: ", deaths.per.1000.tool.tip),
+          hoverinfo = "text",
+          hoveron = "fills") %>%
+  layout(title="",
+         showlegend = FALSE)
+
+fig4
+
+```
 
 ---
 
@@ -363,7 +663,7 @@ population <- population %>%
 
 ```{r}
 x <- 11
-y <- 15
+y <- 17
 
 scrape.ui <- function(x,y) {
   require(rvest)
@@ -429,6 +729,53 @@ fig1a
 ---
 
 # Wisconsin Dept. of Health Services
+
+```{r}
+us_states <- read_csv("https://raw.githubusercontent.com/nytimes/covid-19-data/master/us-states.csv")
+
+```
+
+```{r}
+population <- read_csv("http://www2.census.gov/programs-surveys/popest/datasets/2010-2019/national/totals/nst-est2019-alldata.csv")
+
+population <- population %>% 
+  filter(NAME == "Wisconsin") %>% 
+  rename(state = NAME,
+         population = POPESTIMATE2019) %>% 
+  select(state, population)
+
+```
+
+```{r}
+x <- 11
+y <- 17
+
+scrape.ui <- function(x,y) {
+  require(rvest)
+  url <- paste0("https://dwd.wisconsin.gov/covid19/public/stats/week-",x:(y-1),".htm")
+  url <- c(url, "https://dwd.wisconsin.gov/covid19/public/ui-stats.htm")
+  df <- matrix(nrow=0,ncol=3)
+  for(i in 1:(y-x+1)) {
+    tab <- read_html(url[i]) %>% 
+      html_nodes("table") %>% 
+      html_table()
+    tab[[1]]$Week <- x+i-1
+    # tab[[1]] <- tab[[1]] %>% 
+    #   mutate(Week = (x+i-1))
+    df <- rbind(df,tab[[1]])
+  }
+  return(df)
+}
+
+df_ui <- scrape.ui(x,y)
+
+df_ui <- df_ui %>% 
+  mutate_at(vars(`2020Daily Total`:`2019Daily Total`), str_remove_all, pattern = ",") %>% 
+  mutate_at(vars(`2020Daily Total`:`2019Daily Total`), str_remove_all, pattern = "\\*") %>% 
+  mutate_at(vars(`2020Daily Total`:`2019Daily Total`), as.numeric) %>% 
+  mutate(date = lubridate::as_date(lubridate::ymd(20200301):(lubridate::ymd(20200301)+n()-1)))
+
+```
 
 ```{r}
 plot_data <- us_states %>% 
