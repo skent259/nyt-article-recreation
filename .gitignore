@@ -1,2 +1,5 @@
 *.html
 .Rproj.user
+data/
+presentation/presentation_files
+presentation/presentation_no-plots_files

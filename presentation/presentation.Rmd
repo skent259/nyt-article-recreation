@@ -71,7 +71,46 @@ library(maptools)
 
 ---
 
+# New York Times Data Visualizations
+
+<!-- [Screen Grab] -->
+.pull-left[
+  <center>
+  <img src="nyt-upshot-headline.png" alt="diagonal layout" height="200"/>  
+  <img src="nyt-upshot-growth-rate-vs-time.png" alt="diagonal layout" height="350"/>
+  </center>
+]
+
+.pull-right[
+  <center>
+    <img src="nyt-upshot-metro-box.png" alt="diagonal layout" width="350"/>
+    <img src="nyt-upshot-growth-rate-vs-cases.png" alt="diagonal layout" height="350"/>
+  </center>
+  <div style="width:300; word-wrap: break-word;">
+    <https://www.nytimes.com/interactive/2020/04/03/upshot/coronavirus-metro-area-tracker.html>
+  </div>
+]
+
+---
+class: inverse 
+
 # AFI DSI COVID-19 Research Group
+
+.kinda-big-text[
+
+  "*Wisconsin leaders need information about the extent and impact of COVID-19 to make good decisions.*" - [AFI DSI COVID-19 Research Group Charter](https://datascience.wisc.edu/covid19/covid19_charter/)
+  
+  **Project Idea**: "*Can we add value with visualizations of growth rates in Wisconsin metro areas?*" - [Steve Goldstein](https://biostat.wiscweb.wisc.edu/staff/goldstein-steve/)
+  
+  **Audience**: 
+  - Wisconsin Public Health Officials
+  - Health System Officials
+  - Interested modelers and citizens
+
+]
+
+
+???
 
 [Collaborator]
 
@@ -81,19 +120,21 @@ Goal: [Goal]
 
 ---
 
-# New York Times Data Visualizations
+# Data Sources
 
-[Screen Grab]
-
----
-
-# Data Sources [Used]
-
-- Corona Data Scraper Timeseries
+.big-text[
 - New York Times Database of U.S. Coronavirus Cases
-- United States Census Bureau County Population Totals
-- United States Census Bureau Delineation Files
-- United States Census Bureau Cartographic Boundary Files
+- Corona Data Scraper Timeseries
+- United States Census Bureau:
+  - County Population Totals
+  - Delineation Files
+  - Cartographic Boundary Files
+]
+
+
+???
+
+- Delineation files are for the geographic metro/micro regions (by county for aggregation)
 
 ---
 
@@ -305,7 +346,28 @@ fig1
 
 # Growth Rate
 
-[Sean]
+.big-text[
+Calculate [compound daily growth rate](https://en.wikipedia.org/wiki/Compound_annual_growth_rate):
+]
+
+\begin{equation}
+\textrm{avg daily change}_t =  \left( \frac{\textrm{cases}_t}{\textrm{cases}_{t-7}} \right)^{(1/7)} - 1 
+\end{equation}
+
+
+.big-text[
+Captures the <span style="color: #FF1B70;">relative spread</span> of Cornoavirus
+
+Averaged over last 7 days
+
+]
+
+
+???
+
+- Not an exact match to NYT visualizations, but was pretty close
+- Averaged to account for changes in test results over weekends 
+- Highly volatile for areas with small case counts, only plot those with >30 cases 
 
 ```{r data choices}
 ## Data choices
@@ -629,11 +691,27 @@ fig4
 
 # Website
 
+</br>
+## [data-viz.it.wisc.edu/wi-metro-growth-rate/](https://data-viz.it.wisc.edu/wi-metro-growth-rate/)
+
+.big-text[
+- Daily updates to data
+- Weekly updates summarizing key developments
+]
+
+.center[
+<img src="rstudio-connect.png" alt="diagonal layout" height="150"/>
+<img src="rstudio-server-pro.png" alt="diagonal layout" height="150"/>
+]
+
+???
+
 [Sean Retrospective]
-
-https://data-viz.it.wisc.edu/wi-metro-growth-rate/
-
----
+- Hosted on Rstudio Server through data-viz.it.wisc.edu
+- Updates daily each afternoon with new data
+- Hosting on new platform never easy, plenty of time and energy goes into these sorts of things
+- Really matters to have a professional, public-facing way to display the results
+--
 
 # Wisconsin Dept. of Health Services
 
