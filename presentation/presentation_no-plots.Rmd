@@ -78,8 +78,31 @@ library(maptools)
 
 # COVID-19 Data Visualizations
 
-[Screen Grab: FT, JHU, etc. (look at AFI DSI COVID-19 website)]
+<!-- [Screen Grab: FT, JHU, etc. (look at AFI DSI COVID-19 website)] -->
 
+.pull-left[
+  <center>
+  <img src="vis-financial-times-new-cases.png" alt="diagonal layout" width="400"/>
+  <a href="https://www.ft.com/coronavirus-latest">https://www.ft.com/coronavirus-latest</a>
+  </br>
+  </br>
+  <img src="vis-geods-mobility.png" alt="diagonal layout" width="400"/>
+  <div style="width:400; word-wrap: break-word;">
+    <a href="https://geods.geography.wisc.edu/covid19/physical-distancing">https://geods.geography.wisc.edu/covid19/physical-distancing</a>
+  </div>
+  </center>
+]
+
+.pull-right[
+  <center>
+    <img src="vis-uchicago-atlas-clustering.png" alt="diagonal layout" width="400"/>
+    <a href="https://geodacenter.github.io/covid/map.html">https://geodacenter.github.io/covid/map.html</a>
+    </br>
+    </br>
+    <img src="vis-ihme-resources.png" alt="diagonal layout" width="400"/>
+    <a href="https://covid19.healthdata.org/united-states-of-america">https://covid19.healthdata.org/united-states-of-america</a>
+  </center>
+]
 
 ---
 
@@ -211,7 +234,6 @@ Averaged over last 7 days
 ---
 
 # Website
-
 
 </br>
 ## [data-viz.it.wisc.edu/wi-metro-growth-rate/](https://data-viz.it.wisc.edu/wi-metro-growth-rate/)
