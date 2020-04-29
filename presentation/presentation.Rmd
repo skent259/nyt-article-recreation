@@ -662,7 +662,7 @@ fig3 <- county %>%
          cases.per.1000 = ifelse(cases.per.1000<=0.025, NA, cases.per.1000),
          cases.per.1000 = ifelse(metro=="Rest of United States", NA, cases.per.1000)) %>% 
   mutate(cases.per.1000 = cut(cases.per.1000,
-                              c(min(cases.per.1000, na.rm = TRUE), 0.1, 0.25, 0.5, 1, 2, 4, max(cases.per.1000, na.rm = TRUE)))) %>%
+                              c(min(cases.per.1000, na.rm = TRUE), 0.25, 0.5, 1, 2.5, 5, 10, max(cases.per.1000, na.rm = TRUE)))) %>%
   sf::st_transform(crs = "+proj=aea +lat_1=25 +lat_2=50 +lon_0=-100") %>% 
   sf::st_cast("MULTIPOLYGON") %>%
   plot_ly(split = ~metro, 
@@ -680,6 +680,8 @@ fig3 <- county %>%
 fig3
 
 ```
+
+![](confirmed-cases-color-scale.png)
 
 ---
 
@@ -721,6 +723,8 @@ fig4 <- county %>%
 fig4
 
 ```
+
+![](confirmed-deaths-color-scale.png)
 
 ---
 
