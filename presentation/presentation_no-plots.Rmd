@@ -73,6 +73,10 @@ library(maptools)
   padding: 0.2em 0em 0em 0em;
 }
 
+.kinda-small-text {
+  font-size: 14px; 
+}
+
 </style>
 
 # COVID-19
@@ -236,13 +240,13 @@ Averaged over last 7 days
 
 ---
 
-# Maps of Metro Areas
+# Map of Confirmed Cases per 1000 People
 
 [Plot] 
 
 ---
 
-# Maps of Metro Areas
+# Map of Deaths per 1000 People
 
 [Plot] 
 
@@ -362,6 +366,14 @@ class: inverse, center, middle
 <center>
     <img src="ty-box.png" alt="diagonal layout" width="600"/>
 </center>
+<!-- <div style="width: 600; word-wrap: break-word;"> -->
+<!--     <a href="https://fivethirtyeight.com/features/a-comic-strip-tour-of-the-wild-world-of-pandemic-modeling/">https://fivethirtyeight.com/features/a-comic-strip-tour-of-the-wild-world-of-pandemic-modeling/</a> -->
+<!-- </div> -->
+
+.kinda-small-text[
+<https://fivethirtyeight.com/features/a-comic-strip-tour-of-the-wild-world-of-pandemic-modeling/>
+]
+
 
 ???
 

@@ -73,6 +73,10 @@ library(maptools)
   padding: 0.2em 0em 0em 0em;
 }
 
+.kinda-small-text {
+  font-size: 14px; 
+}
+
 </style>
 
 # COVID-19
@@ -154,7 +158,7 @@ library(maptools)
 ---
 class: inverse 
 
-# AFI DSI COVID-19 Research Group
+# COVID-19 Growth Rates in Wisconsin
 
 .kinda-big-text[
 
@@ -163,8 +167,8 @@ class: inverse
   **Project Idea**: "*Can we add value with visualizations of growth rates in Wisconsin metro areas?*" - [Steve Goldstein](https://biostat.wiscweb.wisc.edu/staff/goldstein-steve/)
   
   **Audience**: 
-  - Wisconsin Public Health Officials
-  - Health System Officials
+  - Wisconsin public health officials
+  - Health system officials
   - Interested modelers and citizens
 
 ]
@@ -187,9 +191,9 @@ class: inverse
 
 - Delineation files are for the geographic metro/micro regions (by county for aggregation)
 
----
+<!-- --- -->
 
-# Exponential Spread of COVID-19
+<!-- # Exponential Spread of COVID-19 -->
 
 ```{r}
 ## Data choices
@@ -320,7 +324,7 @@ other_metro <-
 
 ```
 
-```{r}
+```{r, eval = FALSE}
 plot_data <-
   rbind(us_metro) %>% 
   filter(!is.na(metro_name)) %>% 
@@ -407,7 +411,7 @@ Calculate [compound daily growth rate](https://en.wikipedia.org/wiki/Compound_an
 
 
 .big-text[
-Captures the <span style="color: #FF1B70;">relative spread</span> of Cornoavirus
+Captures the <span style="color: #FF1B70;">relative spread</span> of COVID-19
 
 Averaged over last 7 days
 ]
@@ -657,7 +661,7 @@ fig2
 
 ---
 
-# Maps of Metro Areas
+# Map of Confirmed Cases per 1000 People
 
 ```{r}
 ## US Metro Map (Cases)
@@ -700,7 +704,7 @@ fig3
 
 ---
 
-# Maps of Metro Areas
+# Map of Deaths per 1000 People
 
 ```{r}
 ## US Metro Map (Deaths)
@@ -1221,6 +1225,12 @@ class: inverse, center, middle
 <center>
     <img src="ty-box.png" alt="diagonal layout" width="600"/>
 </center>
+
+.kinda-small-text[
+<https://fivethirtyeight.com/features/a-comic-strip-tour-of-the-wild-world-of-pandemic-modeling/>
+]
+
+
 
 ???
 
