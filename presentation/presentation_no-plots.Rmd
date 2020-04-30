@@ -45,6 +45,11 @@ library(maptools)
   top:               50%;
   transform:         translateY(30%);
 }
+.kinda-center-mid {
+  position:          relative;
+  top:               50%;
+  transform:         translateY(15%);
+}
 
 .center-left {
   position:          relative;
@@ -72,13 +77,33 @@ library(maptools)
 
 # COVID-19
 
-[Headline]
+.pull-left[
+  <center>
+  <img src="ft.png" alt="diagonal layout" height="150"/>
+  <a href="https://www.ft.com/coronavirus-latest">Financial Times</a>
+  </br>
+  </br>
+  <img src="wsj.png" alt="diagonal layout" height="100"/>
+  <div style="width:400; word-wrap: break-word;">
+    <a href="https://www.wsj.com/livecoverage/coronavirus-2020-04-29?mod=theme_coronavirus-ribbon">The Wall Street Journal</a>
+  </div>
+  </center>
+]
+
+.pull-right[
+  <center>
+    <img src="ec.png" alt="diagonal layout" height="150"/>
+    <a href="https://www.economist.com/news/2020/03/11/the-economists-coverage-of-the-coronavirus">The Economist</a>
+    </br>
+    </br>
+    <img src="nyt.png" alt="diagonal layout" height="100"/>
+    <a href="https://www.nytimes.com/news-event/coronavirus">The New York Times</a>
+  </center>
+]
 
 ---
 
 # COVID-19 Data Visualizations
-
-<!-- [Screen Grab: FT, JHU, etc. (look at AFI DSI COVID-19 website)] -->
 
 .pull-left[
   <center>
@@ -143,16 +168,6 @@ class: inverse
   - Interested modelers and citizens
 
 ]
-
-
-???
-
-[Collaborator]
-
-[Audience]
-
-Goal: [Goal]
-
 
 ---
 
@@ -264,9 +279,14 @@ Averaged over last 7 days
 
 # Wisconsin Dept. of Health Services
 
+.kinda-big-text[
 **Reka Sundaram-Stukel**
+]
 
-[Srikanth: Email]
+.center[
+<img src="rsundara-1.png" alt="diagonal layout" width="600"/>
+<img src="rsundara-2.png" alt="diagonal layout" width="600"/>
+]
 
 ---
 
@@ -284,9 +304,14 @@ Averaged over last 7 days
 
 # Gundersen Health System
 
+.kinda-big-text[
 **Corey Zarecki**
+]
 
-[Srikanth: Email]
+.center[
+<img src="cjzareck-1.png" alt="diagonal layout" width="600"/>
+<img src="cjzareck-2.png" alt="diagonal layout" width="600"/>
+]
 
 ---
 
@@ -304,16 +329,40 @@ Averaged over last 7 days
 
 # Future Work
 
-[Split]
+.pull-left[
+.kinda-center-mid[
+  <center>
+  <img src="fw-the-bulwark.jpg" alt="diagonal layout" width="400"/>
+  <a href="https://thebulwark.com/newsletter-issue/one-chart-shows-which-states-are-in-trouble-with-covid-19/">The Bulwark</a>
+  </center>
+]
+]
+
+.pull-right[
+.center-mid[
+  <center>
+    <img src="fw-nyt-coronavirus-testing-states.png" alt="diagonal layout" width="400"/>
+    <a href="https://www.nytimes.com/interactive/2020/04/17/us/coronavirus-testing-states.html">The New York Times</a>
+  </center>
+]
+]
+
+???
 
 <!-- - Fit extended state-space SIR model with time-varying transmission rates using `eSIR` -->
 - Effective reproduction rate of the virus $R_t$
-- [Testing]
+- Testing
 
 ---
 layout: false
 class: inverse, center, middle
 
 # **Thank You!**
+
+<center>
+    <img src="ty-box.png" alt="diagonal layout" width="600"/>
+</center>
+
+???
 
 [FiveThirtyEight Comic Strip: George Box Quote]
