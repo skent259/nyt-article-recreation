@@ -1,0 +1,12 @@
+name: wi-metro-growth-rate-slides
+title: wi-metro-growth-rate-slides
+username: spkent
+account: spkent
+server: data-viz.it.wisc.edu
+hostUrl: https://data-viz.it.wisc.edu/__api__
+appId: 32
+bundleId: 100
+url: https://data-viz.it.wisc.edu/wi-metro-growth-rates-presentation/
+when: 1588284039.06313
+asMultiple: FALSE
+asStatic: FALSE

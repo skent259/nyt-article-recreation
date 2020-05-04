@@ -1,0 +1,13 @@
+name: presentation_no-plots
+title: presentation_no-plots
+username: spkent
+account: spkent
+server: data-viz.it.wisc.edu
+hostUrl: https://data-viz.it.wisc.edu/__api__
+appId: 33
+bundleId: 99
+url: https://data-viz.it.wisc.edu/content/33/
+when: 1588283024.04293
+asMultiple: FALSE
+asStatic: FALSE
+additionalFiles: ft.png

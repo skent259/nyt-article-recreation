@@ -1,16 +1,21 @@
 ---
-title: "Coronavirus in the Wisconsin: </br> How Fast It's Growing"
-subtitle: "<html><div style='float:left'></div><hr color='#EB811B' size=1px width=796px></html>"
-author: 
-  - "Srikanth Aravamuthan & Sean Kent"
-  - "AFI DSI COVID-19 Research Group"
+title: 'Coronavirus in the Wisconsin: </br> How Fast It''s Growing'
+author:
+- Srikanth Aravamuthan & Sean Kent
+- AFI DSI COVID-19 Research Group
 date: "April 30, 2020"
-output: 
+output:
   xaringan::moon_reader:
-    css: [default, metropolis, metropolis-fonts]
-    fig_caption: true
-header-includes:
-  \usepackage{multirow}
+    css:
+    - default
+    - metropolis
+    - metropolis-fonts
+    fig_caption: yes
+    self_contained: yes
+resource_files:
+- ft.png
+subtitle: <html><div style='float:left'></div><hr color='#EB811B' size=1px width=796px></html>
+header-includes: \usepackage{multirow}
 ---
 
 ```{r setup, include=FALSE}
@@ -81,9 +86,11 @@ library(maptools)
 
 # COVID-19
 
+
+
 .pull-left[
   <center>
-  <img src="ft.png" alt="diagonal layout" height="150"/>
+  <img src="/ft.png" alt="diagonal layout" height="150"/>
   <a href="https://www.ft.com/coronavirus-latest">Financial Times</a>
   </br>
   </br>
@@ -93,6 +100,9 @@ library(maptools)
   </div>
   </center>
 ]
+
+![](ft.png)
+
 
 .pull-right[
   <center>
@@ -104,6 +114,7 @@ library(maptools)
     <a href="https://www.nytimes.com/news-event/coronavirus">The New York Times</a>
   </center>
 ]
+
 
 ---
 

@@ -1,5 +1,7 @@
 *.html
+*.pdf
 .Rproj.user
 data/
 presentation/presentation_files
 presentation/presentation_no-plots_files
+presentation/presentation_for-sharing_files
