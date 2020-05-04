@@ -1,10 +1,10 @@
 ---
-title: "Coronavirus in the Wisconsin: How Fast It's Growing"
-subtitle: "Report submitted Stat 998 - Major Project 3"
+title: "Coronavirus in Wisconsin: How Fast It's Growing"
+subtitle: "Report submitted for Stat 998 - Major Project 3"
 author:
-  - "Srikanth Aravamuthan & Sean Kent"
+  - "Srikanth Aravamuthan & Sean Kent with"
   - "Steve Goldstein & The AFI DSI COVID-19 Research Group"
-date: "3/10/2020"
+date: "5/5/2020"
 output: 
   pdf_document:
     number_sections: TRUE
@@ -32,7 +32,7 @@ knitr::opts_chunk$set(
   message = FALSE,
   fig.align = "center"
   )
-# knitr::opts_chunk$set(fig.width=10, fig.height=4) 
+knitr::opts_chunk$set(fig.width=10, fig.height=4)
 
 library(tidyverse)
 library(here)
@@ -64,25 +64,53 @@ kable_standard <- function(...) {
 - covid-19 visualizations
 - nyt inspiration
 
+# Data Sources
+
 
 
 # Growth Rate Visualizations
 
-- intro with more details on the nyt article inspiration
+Much of the inspiration for this project came from two articles in the New York Times that showed visualizations highlighting how fast COVID-19 was spreading, and where.  The first, [*Four Ways to Measure Coronavirus Outbreaks in U.S. Metro Areas*](https://www.nytimes.com/interactive/2020/03/27/upshot/coronavirus-new-york-comparison.html), introduced a few visualizations and explained why looking at them provided different insights into the spread of the pandemic.  The second article, [*How Severe Are Coronavirus Outbreaks Across the U.S.? Look Up Any Metro Area*](https://www.nytimes.com/interactive/2020/04/03/upshot/coronavirus-metro-area-tracker.html), expanded on the visualizations by adding a few more and updating daily with new data and hot-spots.  While the later article had a feature to interactively look-up any metro area, Steve Goldstein thought that we could add value by re-creating these charts specifically for the Wisconsin metro areas, with a few regions for comparison.  
+
+We saw a lot of value in looking specifically at growth rates.  Growth rates are important in comparing different metropolitan areas because they capture the **relative spread** of the virus.  Both aspects are important: **spread** is an important metric to decide where to intervene and to understand whether a previous intervention is working, while **relative** measures matter when looking at smaller metro areas or metro areas where the disease started later.  Many of the visualizations that look at case counts over time (especially comparing many different areas) have a tendency to hide those regions where COVID-19 started spreading later.  By focussing directly on the growth rate, we can create visualizations that can identify areas in which the disease is growing fast, no matter when the virus started affecting the area. 
+
+We operationalize the growth rate of COVID-19 in a metropolitan area by the following calculation for the average daily change in confirmed cases.  It's worth noting that the original NYT article doesn't mention how they calculate this metric, but our calculation is based on a geometric growth rate averaged over the previous 7 days (to mitigate issues where reported cases dips over the weekend).  
+
+\begin{equation}
+\textrm{avg daily change}_t =  \left( \frac{\textrm{cases}_t}{\textrm{cases}_{t-7}} \right)^{(1/7)} - 1 
+\end{equation}
 
 ## Daily Growth Rate over Time
 
-- plot
-- interactivity 
-- pros/cons
-- add some example findings
+The first main plot shows the daily growth rate of confirmed cases over the last 4 weeks.  Figure \ref{fig:gr-time} shows this visualization from 5/4/2020 for the Wisconsin metropolitan areas with at least 30 cases.  Metro ares with fewer than 30 cases were omitted because of the large variance and potentially misleading results growth rates provide when the number of cases is small.  For example, in the early outbreak stage, an increase in confirmed cases from 4 to 8 looks like 100\% growth, but we don't expect that true cases actually doubled.  It's much more likely that these cases were simply discovered in one day.  
+
+```{r gr-time, fig.cap = "\\textit{figure caption}", out.width = "90%"}
+knitr::include_graphics(
+  here("report/figures/growth-rate-vs-time-wi.png")
+)
+```
+
+It's clear from Figure \ref{fig:gr-time} that the Green Bay metro area has seen the highest growth in the last 4 weeks, consistently around 15-20\% until the last week or so.  This is one strength of the plot, allowing us to see right now where the virus is spreading the most (assuming that confirmed cases follow similar trends to actual cases).  Another strength is being able to quickly see where the spread is speeding-up or slowing-down.  For example, Green Bay metro area has seen a slow down in the growth rate, although notably the number of cases is still *increasing* at a high rate.  It's also clear that a few areas--Oshkosh-Neenah, Eau Claire, and Appleton--are seeing an increase the spread, corresponding to an acceleration of the extent of COVID-19.  
+
+As with any visualization, there are some areas where it is less helpful.  Because outbreaks may happen at different times, it's hard to compare metro areas where the spread happens at different times.  For example, Madison and Milwaukee saw large growth in confirmed cases in mid-March, but that doesn't show up when looking at data from the previous 4 weeks.  Another problem is that case data quality may vary a lot by place.  It seems likely that the bigger metro areas may have received more testing capacity early on in the pandemic, whereas smaller areas may have less reliable data.  
+
+We added a number of interactivity features to this visualization.  Double-clicking on a region in the legend will start a comparison, and others can be added to the comparison by single-clicking on them.  Hovering over any data point provides details-on-demand including the metro area name, date, cases, and daily change.  This gives context to the visualization and allows a user to dig deep into the data that they care about.  
 
 ## Daily Growth Rate by Case Count
 
-- plot
-- pros/cons
-- add some example findings
+It can be important to distinguish between places where cases are growing fast with few cases and places where cases are numerous and still growing fast.  The later type of area is at a severe risk for overwhelming the hospital system, whereas the former may have more time to prepare.  The plot of growth rate over time has a hard time distinguishing between these two types of areas, which is where the second main plot can be useful.  Figure \ref{fig:gr-cases} shows the growth rate of daily cases compares to the confirmed cases per thousand people updated as of 5/4/2020.  This has the same y-axis as Figure \ref{fig:gr-time}, but the x-axis now shows a measure of the extent of COVID-19 in the metro area.  
 
+```{r gr-cases, fig.cap = "\\textit{figure caption}", out.width = "90%"}
+knitr::include_graphics(
+  here("report/figures/growth-rate-vs-cases-wi.png")
+)
+```
+
+Figure \ref{fig:gr-cases} has a few important features.  First, confirmed cases (on the x-axis) can only increase, and so the lines will continue to move (either slowly or quickly) to the right.  The further to the right, the worse the extent of the disease is in a given area.  Second, the goal of a given area is to reach an average daily change of 0\%.  This is the point where there are no new cases.  So even if growth rates are low or trending downward, the area is still seeing an increase in the number of cases.  Places with slower growth rates will often have points much closer together, and so it can be hard to judge time from this visualization.  
+
+Compared with Figure \ref{fig:gr-time}, Figure \ref{fig:gr-cases} makes clear that Green Bay, with it's sustained high growth rate, has been the hardest hit Wisconsin metropolitan area by are.  The cases per thousand are close to double that of Milwaukee, the next highest in Wisconsin.  Other areas that were showing higher growth rates recently, Oshkosh-Neenah, Eau Claire, and Appleton, all have a very low number of cases per capita, indicating the disease might not be wide-spread there yet.  This figure also allows us to compare areas that saw large outbreaks at different times.  We can see that Madison, which had high growth rates in mid-March, is now seeing very little spread, whereas Racine has continued to grow, and is accelerating in recent days, despite seeing a drop in growth rate similar to Madison early on.  
+
+Figure \ref{fig:gr-cases} suffers from the problem that it is difficult to read at first.  The combination of axes can provide valuable information, but one has to be careful not to interpret a decreasing trend as the end of the growth.  Any positive growth rate indicates that COVID-19 is still spreading.  This also relies on confirmed cases being similar to actual cases.  When comparing metro areas at different times, this assumption might be less valid.  For example, it may be the case that many people in Milwaukee went undetected early on, and have since recovered.  An area like Green Bay, in which the CDC went to investigate, may have seen much larger portions of the population tested, thus detecting more cases than Milwaukee.  Nevertheless, this plot has a lot of advantages for those deciding where to focus interventions.  
 
 
 # Maps of Metro Areas
