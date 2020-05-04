@@ -1,0 +1,150 @@
+---
+title: "Coronavirus in the Wisconsin: How Fast It's Growing"
+subtitle: "Report submitted Stat 998 - Major Project 3"
+author:
+  - "Srikanth Aravamuthan & Sean Kent"
+  - "Steve Goldstein & The AFI DSI COVID-19 Research Group"
+date: "3/10/2020"
+output: 
+  pdf_document:
+    number_sections: TRUE
+header-includes:
+  \linespread{1.25}
+  \usepackage{helvet}
+  \usepackage{float}
+  \usepackage{tikz}
+  \usepackage{caption}
+  \usepackage{hyperref}
+  \renewcommand{\familydefault}{\sfdefault}
+  \floatplacement{figure}{H}
+# bibliography: references/epileptic-dogs.bib
+link-citations: true
+linkcolor: cyan
+---
+
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = FALSE,
+  cache = FALSE,
+  warning = FALSE,
+  message = FALSE,
+  fig.align = "center"
+  )
+# knitr::opts_chunk$set(fig.width=10, fig.height=4) 
+
+library(tidyverse)
+library(here)
+library(knitr)
+library(kableExtra)
+
+options(knitr.kable.NA = '')
+
+kable_standard <- function(...) {
+  kable(..., booktabs = TRUE, linesep = "") %>% 
+    kable_styling(full_width = FALSE) %>% 
+    kable_styling(latex_options = "HOLD_position")
+}
+
+```
+
+
+
+## Summary {-} 
+<!-- the {-} means don't number this section -->
+- benefit of looking at growth rates
+- maps provide cluster info and spatial context
+- this idea can be extended, but needs modifications for non-metro areas 
+- available on a website
+
+# Introduction
+
+- covid-19
+- covid-19 visualizations
+- nyt inspiration
+
+
+
+# Growth Rate Visualizations
+
+- intro with more details on the nyt article inspiration
+
+## Daily Growth Rate over Time
+
+- plot
+- interactivity 
+- pros/cons
+- add some example findings
+
+## Daily Growth Rate by Case Count
+
+- plot
+- pros/cons
+- add some example findings
+
+
+
+# Maps of Metro Areas
+
+## Map of Confirmed Cases per 1,000 People
+
+- plot
+- pros/cons
+- add some example findings
+
+## Map of Confirmed Deaths per 1,000 People
+
+- plot
+- pros/cons
+- add some example findings
+
+
+
+# Follow-up work
+
+## Unemployment and Confirmed COVID-19 Cases
+
+- talk about the Reka conversation 
+- additional plots
+
+## COVID-19 Spread in Counties With Few Cases
+
+- talk about the Gundersen conversation
+- additional plots for them, why they needed to be different
+
+## Future work
+
+
+# Conclusions
+
+
+
+
+
+\newpage 
+
+# Appendix {-}
+
+# References {-}
+
+<!-- TODO: -->
+
+
+
+<!-- Old stuff for how to do things in .Rmd (figures, footnotes, etc) -->
+
+<!-- A regular sentence[^4.2].   -->
+
+<!-- [^4.2]: This is a footnote.   -->
+
+
+<!-- ```{r seizure-dind, eval = FALSE, fig.cap = "\\textit{3-month total seizure count for 38 epileptic dogs.  Small points indicate individual observations, and the large points indicate the mean for each group.}",} -->
+<!-- knitr::include_graphics( -->
+<!--   here("figures/aim4-seizure-comparison-trt-trt-period.pdf") -->
+<!-- ) -->
+<!-- ``` -->
+
+<!-- Aggregating the seizure data into three month periods, Figure \ref{fig:seizure-dind}  -->
+
+
