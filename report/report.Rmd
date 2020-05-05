@@ -92,7 +92,7 @@ We operationalize the growth rate of COVID-19 in a metropolitan area by the foll
 
 The first main plot shows the daily growth rate of confirmed cases over the last 4 weeks. Figure \ref{fig:gr-time} shows this visualization from 5/4/2020 for the Wisconsin metropolitan areas with at least 30 cases. Metro areas with fewer than 30 cases were omitted because of the large variance and potentially misleading results growth rates provide when the number of cases is small. For example, in the early outbreak stage, an increase in confirmed cases from 4 to 8 looks like 100\% growth, but we don't expect that true cases doubled. It's much more likely that these cases were simply discovered in one day. 
 
-```{r gr-time, fig.cap = "\\textit{Daily growth rate of confirmed cases (once reaching 30 confirmed cases) over the last 4 weeks. Metro areas with high growth, such as Green Bay, are easily identifiable.}", out.width = "90%"}
+```{r gr-time, fig.cap = "\\textit{Daily growth rate of confirmed cases (once reaching 30 confirmed cases) over the last four weeks. Metro areas with high growth are easily identifiable e.g. Green Bay, WI.}", out.width = "90%"}
 knitr::include_graphics(
   here("report/figures/growth-rate-vs-time-wi.png")
 )
@@ -108,7 +108,7 @@ We added several interactivity features to this visualization. Double-clicking o
 
 It can be important to distinguish between places where cases are growing fast with few cases and places where cases are numerous and still growing fast. The later type of area is at severe risk for overwhelming the hospital system, whereas the former may have more time to prepare. The plot of growth rate over time has a hard time distinguishing between these two types of areas, which is where the second main plot can be useful. Figure \ref{fig:gr-cases} shows the growth rate of daily cases compares to the confirmed cases per thousand people updated as of 5/4/2020. This has the same y-axis as Figure \ref{fig:gr-time}, but the x-axis now shows a measure of the extent of COVID-19 in the metro area. 
 
-```{r gr-cases, fig.cap = "\\textit{Daily growth rate of confirmed cases (once reaching 30 confirmed cases) vs confirmed cases per capita. This visuailzation allows us to compare areas based on relative prevalence of COVID-19. }", out.width = "90%"}
+```{r gr-cases, fig.cap = "\\textit{Daily growth rate of confirmed cases (once reaching 30 confirmed cases) versus confirmed cases per capita. The visualization compares areas based on relative prevalence of COVID-19.}", out.width = "90%"}
 knitr::include_graphics(
   here("report/figures/growth-rate-vs-cases-wi.png")
 )
@@ -128,7 +128,7 @@ In the early stages of an outbreak, the population size doesn't matter where one
 
 To make useful per capita comparisons, we have focused on metropolitan areas instead of counties. That is because metropolitan areas roughly correspond with the regions where the virus might spread quickly among families, co-workers or commuters.
 
-```{r map-cases, fig.cap = "\\textit{figure caption}", out.width = "90%"}
+```{r map-cases, fig.cap = "\\textit{Map of confirmed cases per capita at the metro area level in the continental United States.}", out.width = "90%"}
 knitr::include_graphics(
   here("report/figures/map-cases-us.jpg")
 )
@@ -143,7 +143,7 @@ The number of confirmed cases is an imperfect measure of what we really care abo
 
 Examining deaths can allow for a more direct comparison between communities, since it avoids many of the problems with variable testing. Testing differences matter less in measuring deaths because in most places with established outbreaks in the United States, the sickest patients are getting tested. That may be less true in other parts of the world where patients who die outside hospitals in Britain and Italy have, in some cases, been omitted from official data.
 
-```{r map-deaths, fig.cap = "\\textit{figure caption}", out.width = "90%"}
+```{r map-deaths, fig.cap = "\\textit{Map of confirmed death per capita at the metro area level in the continental United States.}", out.width = "90%"}
 knitr::include_graphics(
   here("report/figures/map-deaths-us.jpg")
 )
@@ -157,13 +157,13 @@ However, measuring only deaths has drawbacks as well. We know that the death rat
 
 ## Unemployment and Confirmed Cases of COVID-19 
 
-```{r unemployment-time, fig.cap = "\\textit{figure caption}", out.width = "90%"}
+```{r unemployment-time, fig.cap = "\\textit{Daily growth rate of unemployment claims and confirmed cases beginning March 8, 2020 for the state of Wisconsin.}", out.width = "90%"}
 knitr::include_graphics(
   here("report/figures/unemployment-time.png")
 )
 ```
 
-```{r unemployment-cases, fig.cap = "\\textit{figure caption}", out.width = "90%"}
+```{r unemployment-cases, fig.cap = "\\textit{fDaily growth rate of unemployment claims and confirmed cases versus confirmed cases per capita for the state of Wisconsin.}", out.width = "90%"}
 knitr::include_graphics(
   here("report/figures/unemployment-cases.png")
 )
@@ -173,7 +173,7 @@ After publishing the website, we followed-up with the clients and other end-user
 
 ## COVID-19 Spread in Counties With Few Cases
 
-```{r new-cases-cases, fig.cap = "\\textit{figure caption}", out.width = "90%"}
+```{r new-cases-cases, fig.cap = "\\textit{New cases versus cumulative cases over the last four week for the Gundersen Health System region.}", out.width = "90%"}
 knitr::include_graphics(
   here("report/figures/new-cases-cases.png")
 )
@@ -190,7 +190,6 @@ Moreover, we intend to visualize the testing per capita over time including posi
 # Conclusions
 
 During this pandemic, there's no shortage of visualizations to try and understand the rapidly changing state of the world. Focussing on growth rates and maps of metropolitan areas, we implemented visualizations similar to those that have appeared in the New York Times for Wisconsin metro areas. By measuring the growth in daily confirmed cases, the first two visualizations excel in showing areas with high growth, and whether that growth is increasing or decreasing. This is important for public health officials and health system leaders to know where to spend resources to fight the spread of COVID-19. Mapping confirmed cases and deaths by metro area helps to focus on spatial trends in the spread and group together counties from similar regions. This work has opened the door for additional collaborations, including a striking comparison between the growth of cases and that of unemployment claims and visualizations for counties with few cases that mimic the spirit of our main plots. In the midst of this pandemic, this work suggests that statisticians can provide value by using statistical thinking to design effective visualizations. We hope to continue with future work that incorporates the differences in testing and other measures of disease spread such as $R_0$ from epidemiological models. 
-
 
 
 
