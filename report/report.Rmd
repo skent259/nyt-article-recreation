@@ -157,8 +157,19 @@ However, measuring only deaths has drawbacks as well. We know that the death rat
 
 ## Unemployment and Confirmed COVID-19 Cases
 
-- talk about the Reka conversation 
-- additional plots
+```{r unemployment-time, fig.cap = "\\textit{figure caption}", out.width = "90%"}
+knitr::include_graphics(
+  here("report/figures/unemployment-time.png")
+)
+```
+
+```{r unemployment-cases, fig.cap = "\\textit{figure caption}", out.width = "90%"}
+knitr::include_graphics(
+  here("report/figures/unemployment-cases.png")
+)
+```
+
+After publishing the website, we followed-up with the clients and other end-users to customize visualizations and other features to their specific needs. Reka Sundaram-Stukel, a health economist at the Wisconsin Department of Health Services, wanted to investigate if unemployment claims are related to confirmed cases of COVID-19 in the state of Wisconsin. The worry was an increase in confirmed cases is associated with an increase in unemployment claims and a decrease in economic growth. We scraped the number of initial applications filed for unemployment insurance beginning March 8, 2020 and calcuated the daily growth rate using average daily change equation. We created visualizations analogous to Figure \ref{fig:gr-time} and \ref{fig:gr-cases} for the daily growth rate for unemployment claims and confirmed cases in Figure \ref{fig:unemployment-time} and \ref{fig:unemployment-cases}. The unemployment claims strongly increased and then strongly decreased before the confirmed cases reached the peak in Figure \ref{fig:unemployment-time} and the unemployment claims goes to 0 at a much faster rate than confirmed cases in Figure \ref{fig:unemployment-cases}. Therefore, we were able to conclude that the unemployment claims were a result of the stay-at-home order and we do not expect to observe an increase in claims as the order stays in effect.
 
 ## COVID-19 Spread in Counties With Few Cases
 
@@ -167,7 +178,7 @@ However, measuring only deaths has drawbacks as well. We know that the death rat
 
 ## Future work
 
-The COVID-19 epidemic is transitioning from the initial growth phase to the current plateau. We plan to implement two more visualizations that are in the pipeline to take into account multiple facets and characterize this second stage. We intend to visualize the effective reproduction rate of the virus $R_t$ by the number of new cases over seven day lag. The advantage of the visualization is to measure the infection growth rate versus new case count in the amount of testing done by each county over time for smaller metropolitan and micropolitan areas in the state of Wisconsin. We hope to extend the Bulwark press release and graphics and the county-level Instantaneous $R_0$ in Wisconsin via the Cori 2013/Thompson 2019 models by means of confirmed case counts and serial interval provided by Prof. Doerte Doepfer. 
+The COVID-19 epidemic is transitioning from the initial growth phase to the current plateau. We plan to implement two more visualizations that are in the pipeline to take into account multiple facets and characterize this second stage. We intend to visualize the effective reproduction rate of the virus $R_t$ by the number of new cases over seven day lag. The advantage of the visualization is to measure the infection growth rate versus new case count in the amount of testing done by each county over time for smaller metropolitan and micropolitan areas in the state of Wisconsin. We hope to extend the Bulwark press release and graphics and the county-level Instantaneous $R_0$ in Wisconsin via the Cori,2013-Thompson,2019 models by means of confirmed case counts and serial interval provided by Prof. Doerte Doepfer. 
 
 Moreover, we intend to visualize the testing per capita over time including positive test rate and the level of testing needed to safely reopen the area. As previously stated, the main con of confirmed cases is counts are a function of testing such that an increase in testing results in an increase confirmed cases where the positive test rate held constant. As some governors consider easing social distancing restrictions, new estimates by researchers at Harvard University suggest that the United States cannot safely reopen unless it conducts more than three times the number of coronavirus tests it is currently administering over the next month. Given the recent surge in testing, we hope to extend the New York Times graphics for metropolitan and micropolitan areas in the state of Wisconsin. 
 
