@@ -135,7 +135,7 @@ knitr::include_graphics(
 
 ```
 
-Figure \ref{fig:map-cases} is a map of confirmed cases per capita at the metro area level in the continental United States. Note: This plot is interactive where hovering over a metropolitan area provides details on demand including the name of the metro area, exact counts, population, and per capita measurements. The color of the spatial area and the tool tip is encoded by the density measurement. The metro area of Madison, WI is on the lower end of the spectrum whereas New York and New Orleans is on the higher end of the spectrum. Moreover, we can identify hot-spots at the metropolitan areas of Boston-Cambridge-Newton, MA-NH, Detroit-Warren-Dearborn, MI, and Chicago-Naperville-Elgin, IL-IN-WI as well as the micropolitan areas of Albany, GA and Pine Bluff, AR.
+Figure \ref{fig:map-cases} is a map of confirmed cases per capita at the metro area level in the continental United States. Note: This plot is interactive where hovering over a metropolitan area provides details on demand including the name of the metro area, exact counts, population, and per capita measurements. The color of the spatial area and the tool tip is encoded by the density measurement. Because some parts of the country are more densely populated than others, these numbers are all adjusted for how many people live in each area. The darker an area appears, the greater proportion of its population is infected. The metro area of Madison, WI is on the lower end of the spectrum whereas New York and New Orleans is on the higher end of the spectrum. Moreover, we can identify hot-spots at the metropolitan areas of Boston-Cambridge-Newton, MA-NH, Detroit-Warren-Dearborn, MI, and Chicago-Naperville-Elgin, IL-IN-WI as well as the micropolitan areas of Albany, GA and Pine Bluff, AR.
 
 The number of confirmed cases is an imperfect measure of what we really care about: the prevalence of the virus in the population, and therefore if it is early in the epidemic, the number of people who are sick or may be contagious. The limited availability of testing in some places means that many people with coronavirus will not be counted among the confirmed cases. And the varying rates of testing across states and countries make it hard to compare the number of confirmed cases in different regions.
 
@@ -149,13 +149,13 @@ knitr::include_graphics(
 )
 ```
 
-Figure \ref{fig:map-deaths} is a map of confirmed deaths per capita at the metro area level in the continental United States. Note: This plot is interactive where hovering over a metropolitan area provides details on demand including the name of the metro area, exact counts, population, and per capita measurements. Similar to Figure \ref{fig:map-cases}, the color of the spatial area and the tool tip is encoded by the density measurement. Equivalently, the metro area of Madison, WI is on the lower end of the spectrum whereas New York and New Orleans is on the higher end of the spectrum in addition to the hot-spots at the metropolitan areas of Boston-Cambridge-Newton, MA-NH, Detroit-Warren-Dearborn, MI, Chicago-Naperville-Elgin, IL-IN-WI, and Flagstaff, AZ as well as the micropolitan areas of Albany, GA and Pine Bluff, AR. Additionally, we can identify two other hot-spots at the metropolitan areas of   Indianapolis-Caramel-Anderson, IN and Denver-Aurora-Lakewood, CO most likely associated with various demographic and environmental factors including health and age.
+Figure \ref{fig:map-deaths} is a map of confirmed deaths per capita at the metro area level in the continental United States. Note: This plot is interactive where hovering over a metropolitan area provides details on demand including the name of the metro area, exact counts, population, and per capita measurements. Similar to Figure \ref{fig:map-cases}, the color of the spatial area and the tool tip is encoded by the density measurement. Because some parts of the country are more densely populated than others, these numbers are all adjusted for how many people live in each area. The darker an area appears, the greater proportion of its population is infected. Equivalently, the metro area of Madison, WI is on the lower end of the spectrum whereas New York and New Orleans is on the higher end of the spectrum in addition to the hot-spots at the metropolitan areas of Boston-Cambridge-Newton, MA-NH, Detroit-Warren-Dearborn, MI, Chicago-Naperville-Elgin, IL-IN-WI, and Flagstaff, AZ as well as the micropolitan areas of Albany, GA and Pine Bluff, AR. Additionally, we can identify two other hot-spots at the metropolitan areas of   Indianapolis-Caramel-Anderson, IN and Denver-Aurora-Lakewood, CO most likely associated with various demographic and environmental factors including health and age.
 
 However, measuring only deaths has drawbacks as well. We know that the death rate from coronavirus differs depending on the age and health of the populations affected and the availability of medical resources, like ventilators. That means that per capita rates may look high in places where the virus has infiltrated nursing homes, for example, even if it has not spread widely through the rest of the community. Because patients who die of COVID-19 tend to be sick for weeks first, counting deaths may also understate the current size of the outbreak in a given place if it is growing quickly.
 
 # Follow-up work
 
-## Unemployment and Confirmed COVID-19 Cases
+## Unemployment and Confirmed Cases of COVID-19 
 
 ```{r unemployment-time, fig.cap = "\\textit{figure caption}", out.width = "90%"}
 knitr::include_graphics(
@@ -173,8 +173,13 @@ After publishing the website, we followed-up with the clients and other end-user
 
 ## COVID-19 Spread in Counties With Few Cases
 
-- talk about the Gundersen conversation
-- additional plots for them, why they needed to be different
+```{r new-cases-cases, fig.cap = "\\textit{figure caption}", out.width = "90%"}
+knitr::include_graphics(
+  here("report/figures/new-cases-cases.png")
+)
+```
+
+After the website went live, we followed-up a second time with the clients and other end-users to customize visualizations and other features to their specific needs. Corey Zarecki, Director of Envision at Gundersen Health System, wanted to see regional information over 21 counties in 3 states in the health system. However, the previous plots did not provide meaningful results for counties with few cases. Hence, counties with less 30 confirmed cases were omitted. According to a New York Times article, density measurements focuses on communities where the disease is prevalent. Similarly to Figure \ref{fig:gr-time} and \ref{fig:gr-cases}, the chart shows whether a community has succeeded in slowing the rate of growth before there are many cases for new cases instead of growth rate and cases instead of cases per capita in Figure \ref{fig:new-cases-cases}. The plot is applicable to smaller counties e.g. LaCrosse, Wisconsin and Allamakee, Iowa while also scaling to larger counties e.g. Winona, MN. The interpretation of the plot using new cases by case count is easier to use since an increasing trend implies the number of new cases is greater today than it was yesterday or the virus is growing quickly. Conversely, a decreasing trend implies the number of new cases is lesser today than it was yesterday or the virus is growing quickly. Alternatively, a constant trend implies the number of new cases is the same today as it was yesterday or the virus is spreading at the same rate. Similar to the previous plots, we are rooting for these to go to zero. After publishing the website of the modified New York Times graphics for counties containing Gundersen clinics, Corey Zarecki provided feedback including the charts were easy to use and also shows very clearly the hot-spots confirming other sources. Moreover, he stated the biggest benefit is showing early detection of areas of interest where cases are numerous and still growing fast.
 
 ## Future work
 
