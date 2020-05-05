@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.19 (MiKTeX 2.9.6630 64-bit) (preloaded format=pdflatex 2018.3.20)  5 MAY 2020 10:01
+This is pdfTeX, Version 3.14159265-2.6-1.40.19 (MiKTeX 2.9.6630 64-bit) (preloaded format=pdflatex 2018.3.20)  5 MAY 2020 10:08
 entering extended mode
 **./report.tex
 (report.tex
@@ -1576,7 +1576,7 @@ LaTeX Font Info:    Try loading font information for T1+lmr on input line 283.
 File: t1lmr.fd 2009/10/30 v1.6 Font defs for Latin Modern
 ) [3]
 <C:/Users/skent/Box/_Projects/nyt-article-recreation/report/figures/growth-rate
--vs-time-wi.png, id=106, 702.625pt x 451.6875pt>
+-vs-time-wi.png, id=102, 702.625pt x 451.6875pt>
 File: C:/Users/skent/Box/_Projects/nyt-article-recreation/report/figures/growth
 -rate-vs-time-wi.png Graphic file (type png)
 <use C:/Users/skent/Box/_Projects/nyt-article-recreation/report/figures/growth-
@@ -1587,7 +1587,7 @@ port/figures/growth-rate-vs-time-wi.png  used on input line 302.
 [4 <C:/Users/skent/Box/_Projects/nyt-article-recreation/report/figures/growth-r
 ate-vs-time-wi.png>]
 <C:/Users/skent/Box/_Projects/nyt-article-recreation/report/figures/growth-rate
--vs-cases-wi.png, id=117, 702.625pt x 451.6875pt>
+-vs-cases-wi.png, id=113, 702.625pt x 451.6875pt>
 File: C:/Users/skent/Box/_Projects/nyt-article-recreation/report/figures/growth
 -rate-vs-cases-wi.png Graphic file (type png)
 <use C:/Users/skent/Box/_Projects/nyt-article-recreation/report/figures/growth-
@@ -1598,7 +1598,7 @@ port/figures/growth-rate-vs-cases-wi.png  used on input line 358.
 [5 <C:/Users/skent/Box/_Projects/nyt-article-recreation/report/figures/growth-r
 ate-vs-cases-wi.png>]
 <C:/Users/skent/Box/_Projects/nyt-article-recreation/report/figures/map-cases-u
-s.jpg, id=128, 683.55376pt x 385.44pt>
+s.jpg, id=124, 683.55376pt x 385.44pt>
 File: C:/Users/skent/Box/_Projects/nyt-article-recreation/report/figures/map-ca
 ses-us.jpg Graphic file (type jpg)
 <use C:/Users/skent/Box/_Projects/nyt-article-recreation/report/figures/map-cas
@@ -1608,7 +1608,7 @@ port/figures/map-cases-us.jpg  used on input line 425.
 (pdftex.def)             Requested size: 422.78723pt x 238.39984pt.
 [6]
 <C:/Users/skent/Box/_Projects/nyt-article-recreation/report/figures/map-deaths-
-us.jpg, id=138, 692.5875pt x 389.0535pt>
+us.jpg, id=134, 692.5875pt x 389.0535pt>
 File: C:/Users/skent/Box/_Projects/nyt-article-recreation/report/figures/map-de
 aths-us.jpg Graphic file (type jpg)
 <use C:/Users/skent/Box/_Projects/nyt-article-recreation/report/figures/map-dea
@@ -1619,7 +1619,7 @@ port/figures/map-deaths-us.jpg  used on input line 471.
 [7 <C:/Users/skent/Box/_Projects/nyt-article-recreation/report/figures/map-case
 s-us.jpg>]
 <C:/Users/skent/Box/_Projects/nyt-article-recreation/report/figures/unemploymen
-t-time.png, id=147, 702.625pt x 451.6875pt>
+t-time.png, id=143, 702.625pt x 451.6875pt>
 File: C:/Users/skent/Box/_Projects/nyt-article-recreation/report/figures/unempl
 oyment-time.png Graphic file (type png)
 <use C:/Users/skent/Box/_Projects/nyt-article-recreation/report/figures/unemplo
@@ -1628,7 +1628,7 @@ Package pdftex.def Info: C:/Users/skent/Box/_Projects/nyt-article-recreation/re
 port/figures/unemployment-time.png  used on input line 518.
 (pdftex.def)             Requested size: 422.78973pt x 271.7934pt.
 <C:/Users/skent/Box/_Projects/nyt-article-recreation/report/figures/unemploymen
-t-cases.png, id=148, 702.625pt x 451.6875pt>
+t-cases.png, id=144, 702.625pt x 451.6875pt>
 File: C:/Users/skent/Box/_Projects/nyt-article-recreation/report/figures/unempl
 oyment-cases.png Graphic file (type png)
 <use C:/Users/skent/Box/_Projects/nyt-article-recreation/report/figures/unemplo
@@ -1637,7 +1637,7 @@ Package pdftex.def Info: C:/Users/skent/Box/_Projects/nyt-article-recreation/re
 port/figures/unemployment-cases.png  used on input line 527.
 (pdftex.def)             Requested size: 422.78973pt x 271.7934pt.
 <C:/Users/skent/Box/_Projects/nyt-article-recreation/report/figures/new-cases-c
-ases.png, id=155, 702.625pt x 451.6875pt>
+ases.png, id=151, 702.625pt x 451.6875pt>
 File: C:/Users/skent/Box/_Projects/nyt-article-recreation/report/figures/new-ca
 ses-cases.png Graphic file (type png)
 <use C:/Users/skent/Box/_Projects/nyt-article-recreation/report/figures/new-cas
@@ -1649,21 +1649,43 @@ port/figures/new-cases-cases.png  used on input line 562.
 hs-us.jpg>] [9 <C:/Users/skent/Box/_Projects/nyt-article-recreation/report/figu
 res/unemployment-time.png> <C:/Users/skent/Box/_Projects/nyt-article-recreation
 /report/figures/unemployment-cases.png>] [10 <C:/Users/skent/Box/_Projects/nyt-
-article-recreation/report/figures/new-cases-cases.png>] [11] [12]
-Package atveryend Info: Empty hook `BeforeClearDocument' on input line 662.
-Package atveryend Info: Empty hook `AfterLastShipout' on input line 662.
+article-recreation/report/figures/new-cases-cases.png>] [11]
+
+Package xcolor Warning: Incompatible color definition on input line 660.
+
+
+Package xcolor Warning: Incompatible color definition on input line 663.
+
+
+Package xcolor Warning: Incompatible color definition on input line 668.
+
+
+Package xcolor Warning: Incompatible color definition on input line 671.
+
+
+Package xcolor Warning: Incompatible color definition on input line 675.
+
+
+Package xcolor Warning: Incompatible color definition on input line 678.
+
+
+Package xcolor Warning: Incompatible color definition on input line 682.
+
+[12]
+Package atveryend Info: Empty hook `BeforeClearDocument' on input line 685.
+Package atveryend Info: Empty hook `AfterLastShipout' on input line 685.
 (report.aux)
-Package atveryend Info: Executing hook `AtVeryEndDocument' on input line 662.
-Package atveryend Info: Executing hook `AtEndAfterFileList' on input line 662.
+Package atveryend Info: Executing hook `AtVeryEndDocument' on input line 685.
+Package atveryend Info: Executing hook `AtEndAfterFileList' on input line 685.
 Package rerunfilecheck Info: File `report.out' has not changed.
-(rerunfilecheck)             Checksum: 122A3DE8E94EB3B779A4B128B5B7AF31;2698.
-Package atveryend Info: Empty hook `AtVeryVeryEnd' on input line 662.
+(rerunfilecheck)             Checksum: 939F02470BD3ECB3CD133CA51E65BA4A;2611.
+Package atveryend Info: Empty hook `AtVeryVeryEnd' on input line 685.
  ) 
 Here is how much of TeX's memory you used:
- 25081 strings out of 493301
- 442940 string characters out of 3129629
- 510771 words of memory out of 3000000
- 27957 multiletter control sequences out of 15000+200000
+ 25077 strings out of 493301
+ 442898 string characters out of 3129629
+ 510737 words of memory out of 3000000
+ 27955 multiletter control sequences out of 15000+200000
  61419 words of font info for 157 fonts, out of 3000000 for 9000
  1141 hyphenation exceptions out of 8191
  55i,6n,54p,579b,345s stack positions out of 5000i,500n,10000p,200000b,50000s
@@ -1684,9 +1706,9 @@ fonts/type1/public/lm/lmsy10.pfb><C:/Users/skent/AppData/Local/Programs/MiKTeX
 eX 2.9/fonts/type1/urw/helvetic/uhvb8a.pfb><C:/Users/skent/AppData/Local/Progra
 ms/MiKTeX 2.9/fonts/type1/urw/helvetic/uhvr8a.pfb><C:/Users/skent/AppData/Local
 /Programs/MiKTeX 2.9/fonts/type1/urw/helvetic/uhvro8a.pfb>
-Output written on report.pdf (12 pages, 1041625 bytes).
+Output written on report.pdf (12 pages, 1046031 bytes).
 PDF statistics:
- 246 PDF objects out of 1000 (max. 8388607)
- 53 named destinations out of 1000 (max. 500000)
- 20656 words of extra memory for PDF output out of 20736 (max. 10000000)
+ 253 PDF objects out of 1000 (max. 8388607)
+ 51 named destinations out of 1000 (max. 500000)
+ 20648 words of extra memory for PDF output out of 20736 (max. 10000000)
 

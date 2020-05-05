@@ -196,9 +196,26 @@ During this pandemic, there's no shortage of visualizations to try and understan
 
 \newpage 
 
-# Appendix {-}
+<!-- # Appendix {-} -->
 
 # References {-}
+
+Cohn, Nate, Josh Katz, Margot Sanger-Katz, and Kevin Quealy. “Four Ways to Measure Coronavirus Outbreaks in U.S. Metro Areas.” The New York Times, March 27, 2020, sec. The Upshot. https://www.nytimes.com/interactive/2020/03/27/upshot/coronavirus-new-york-comparison.html.
+
+Corona Data Scraper. Timeseries. 2020. Retrieved from https://coronadatascraper.com/#home.
+
+Katz, Josh, Kevin Quealy, and Margot Sanger-Katz. “How Severe Are Coronavirus Outbreaks Across the U.S.? Look Up Any Metro Area.” The New York Times, sec. The Upshot. Accessed May 5, 2020. https://www.nytimes.com/interactive/2020/04/03/upshot/coronavirus-metro-area-tracker.html.
+
+New York Times. New York Times database of U.S. coronavirus cases. 2020. Retrieved from https://github.com/nytimes/covid-19-data.
+
+United States Census Bureau. County Population Totals: 2010-2019. 2019. Retrieved from https://www.census.gov/data/tables/time-series/demo/popest/2010s-counties-total.html.
+
+United States Census Bureau. Delineation Files. 2018. Retrieved from https://www.census.gov/geographies/reference-files/time-series/demo/metro-micro/delineation-files.html.
+
+United States Census Bureau. Cartographic Boundary Files. 2010. Retrieved from https://www.census.gov/geographies/mapping-files/time-series/geo/carto-boundary-file.html.
+
+
+
 
 <!-- TODO: -->
 
