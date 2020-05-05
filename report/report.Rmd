@@ -16,7 +16,7 @@ header-includes:
   \usepackage{caption}
   \usepackage{hyperref}
   \renewcommand{\familydefault}{\sfdefault}
-  \floatplacement{figure}{H}
+  \floatplacement{figure}{hbt!}
 # bibliography: references/epileptic-dogs.bib
 link-citations: true
 linkcolor: cyan
@@ -92,7 +92,7 @@ We operationalize the growth rate of COVID-19 in a metropolitan area by the foll
 
 The first main plot shows the daily growth rate of confirmed cases over the last 4 weeks. Figure \ref{fig:gr-time} shows this visualization from 5/4/2020 for the Wisconsin metropolitan areas with at least 30 cases. Metro areas with fewer than 30 cases were omitted because of the large variance and potentially misleading results growth rates provide when the number of cases is small. For example, in the early outbreak stage, an increase in confirmed cases from 4 to 8 looks like 100\% growth, but we don't expect that true cases doubled. It's much more likely that these cases were simply discovered in one day. 
 
-```{r gr-time, fig.cap = "\\textit{figure caption}", out.width = "90%"}
+```{r gr-time, fig.cap = "\\textit{Daily growth rate of confirmed cases (once reaching 30 confirmed cases) over the last 4 weeks. Metro areas with high growth, such as Green Bay, are easily identifiable.}", out.width = "90%"}
 knitr::include_graphics(
   here("report/figures/growth-rate-vs-time-wi.png")
 )
@@ -108,7 +108,7 @@ We added several interactivity features to this visualization. Double-clicking o
 
 It can be important to distinguish between places where cases are growing fast with few cases and places where cases are numerous and still growing fast. The later type of area is at severe risk for overwhelming the hospital system, whereas the former may have more time to prepare. The plot of growth rate over time has a hard time distinguishing between these two types of areas, which is where the second main plot can be useful. Figure \ref{fig:gr-cases} shows the growth rate of daily cases compares to the confirmed cases per thousand people updated as of 5/4/2020. This has the same y-axis as Figure \ref{fig:gr-time}, but the x-axis now shows a measure of the extent of COVID-19 in the metro area. 
 
-```{r gr-cases, fig.cap = "\\textit{figure caption}", out.width = "90%"}
+```{r gr-cases, fig.cap = "\\textit{Daily growth rate of confirmed cases (once reaching 30 confirmed cases) vs confirmed cases per capita. This visuailzation allows us to compare areas based on relative prevalence of COVID-19. }", out.width = "90%"}
 knitr::include_graphics(
   here("report/figures/growth-rate-vs-cases-wi.png")
 )
@@ -130,8 +130,9 @@ To make useful per capita comparisons, we have focused on metropolitan areas ins
 
 ```{r map-cases, fig.cap = "\\textit{figure caption}", out.width = "90%"}
 knitr::include_graphics(
-  here("report/figures/map-cases-us.png")
+  here("report/figures/map-cases-us.jpg")
 )
+
 ```
 
 Figure \ref{fig:map-cases} is a map of confirmed cases per capita at the metro area level in the continental United States. Note: This plot is interactive where hovering over a metropolitan area provides details on demand including the name of the metro area, exact counts, population, and per capita measurements. The color of the spatial area and the tool tip is encoded by the density measurement. The metro area of Madison, WI is on the lower end of the spectrum whereas New York and New Orleans is on the higher end of the spectrum. Moreover, we can identify hot-spots at the metropolitan areas of Boston-Cambridge-Newton, MA-NH, Detroit-Warren-Dearborn, MI, and Chicago-Naperville-Elgin, IL-IN-WI as well as the micropolitan areas of Albany, GA and Pine Bluff, AR.
@@ -144,7 +145,7 @@ Examining deaths can allow for a more direct comparison between communities, sin
 
 ```{r map-deaths, fig.cap = "\\textit{figure caption}", out.width = "90%"}
 knitr::include_graphics(
-  here("report/figures/map-deaths-us.png")
+  here("report/figures/map-deaths-us.jpg")
 )
 ```
 

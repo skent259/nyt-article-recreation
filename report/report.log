@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.19 (MiKTeX 2.9.6630 64-bit) (preloaded format=pdflatex 2018.3.20)  4 MAY 2020 21:00
+This is pdfTeX, Version 3.14159265-2.6-1.40.19 (MiKTeX 2.9.6630 64-bit) (preloaded format=pdflatex 2018.3.20)  5 MAY 2020 08:36
 entering extended mode
 **./report.tex
 (report.tex
@@ -1558,66 +1558,88 @@ File: mt-msb.cfg 2005/06/01 v1.0 microtype config. file: AMS symbols (b) (RS)
 )
 LaTeX Font Info:    Font shape `T1/phv/bx/n' in size <14.4> not available
 (Font)              Font shape `T1/phv/b/n' tried instead on input line 168.
-LaTeX Font Info:    Try loading font information for TS1+phv on input line 173.
+[1
 
-("C:\Users\skent\AppData\Local\Programs\MiKTeX 2.9\tex\latex\psnfss\ts1phv.fd"
-File: ts1phv.fd 2001/06/04 scalable font definitions for TS1/phv.
-) [1
+{C:/Users/skent/AppData/Local/MiKTeX/2.9/pdftex/config/pdftex.map}] [2]
 
-{C:/Users/skent/AppData/Local/MiKTeX/2.9/pdftex/config/pdftex.map}]
-
-Package xcolor Warning: Incompatible color definition on input line 199.
+Package xcolor Warning: Incompatible color definition on input line 251.
 
 LaTeX Font Info:    Font shape `T1/phv/m/it' in size <10> not available
-(Font)              Font shape `T1/phv/m/sl' tried instead on input line 199.
+(Font)              Font shape `T1/phv/m/sl' tried instead on input line 251.
 
-Package xcolor Warning: Incompatible color definition on input line 204.
+Package xcolor Warning: Incompatible color definition on input line 256.
 
 LaTeX Font Info:    Font shape `T1/phv/bx/n' in size <10> not available
-(Font)              Font shape `T1/phv/b/n' tried instead on input line 212.
-LaTeX Font Info:    Try loading font information for T1+lmr on input line 231.
+(Font)              Font shape `T1/phv/b/n' tried instead on input line 264.
+LaTeX Font Info:    Try loading font information for T1+lmr on input line 283.
 ("C:\Users\skent\AppData\Local\Programs\MiKTeX 2.9\tex\latex\lm\t1lmr.fd"
 File: t1lmr.fd 2009/10/30 v1.6 Font defs for Latin Modern
-) [2]
+) [3]
 <C:/Users/skent/Box/_Projects/nyt-article-recreation/report/figures/growth-rate
--vs-time-wi.png, id=101, 702.625pt x 451.6875pt>
+-vs-time-wi.png, id=106, 702.625pt x 451.6875pt>
 File: C:/Users/skent/Box/_Projects/nyt-article-recreation/report/figures/growth
 -rate-vs-time-wi.png Graphic file (type png)
 <use C:/Users/skent/Box/_Projects/nyt-article-recreation/report/figures/growth-
 rate-vs-time-wi.png>
 Package pdftex.def Info: C:/Users/skent/Box/_Projects/nyt-article-recreation/re
-port/figures/growth-rate-vs-time-wi.png  used on input line 250.
+port/figures/growth-rate-vs-time-wi.png  used on input line 302.
 (pdftex.def)             Requested size: 422.78973pt x 271.7934pt.
-[3 <C:/Users/skent/Box/_Projects/nyt-article-recreation/report/figures/growth-r
+[4 <C:/Users/skent/Box/_Projects/nyt-article-recreation/report/figures/growth-r
 ate-vs-time-wi.png>]
 <C:/Users/skent/Box/_Projects/nyt-article-recreation/report/figures/growth-rate
--vs-cases-wi.png, id=112, 702.625pt x 451.6875pt>
+-vs-cases-wi.png, id=117, 702.625pt x 451.6875pt>
 File: C:/Users/skent/Box/_Projects/nyt-article-recreation/report/figures/growth
 -rate-vs-cases-wi.png Graphic file (type png)
 <use C:/Users/skent/Box/_Projects/nyt-article-recreation/report/figures/growth-
 rate-vs-cases-wi.png>
 Package pdftex.def Info: C:/Users/skent/Box/_Projects/nyt-article-recreation/re
-port/figures/growth-rate-vs-cases-wi.png  used on input line 306.
+port/figures/growth-rate-vs-cases-wi.png  used on input line 358.
 (pdftex.def)             Requested size: 422.78973pt x 271.7934pt.
-[4 <C:/Users/skent/Box/_Projects/nyt-article-recreation/report/figures/growth-r
-ate-vs-cases-wi.png>] [5] [6] [7]
-Package atveryend Info: Empty hook `BeforeClearDocument' on input line 445.
-Package atveryend Info: Empty hook `AfterLastShipout' on input line 445.
+[5 <C:/Users/skent/Box/_Projects/nyt-article-recreation/report/figures/growth-r
+ate-vs-cases-wi.png>]
+<C:/Users/skent/Box/_Projects/nyt-article-recreation/report/figures/map-cases-u
+s.jpg, id=128, 683.55376pt x 385.44pt>
+File: C:/Users/skent/Box/_Projects/nyt-article-recreation/report/figures/map-ca
+ses-us.jpg Graphic file (type jpg)
+<use C:/Users/skent/Box/_Projects/nyt-article-recreation/report/figures/map-cas
+es-us.jpg>
+Package pdftex.def Info: C:/Users/skent/Box/_Projects/nyt-article-recreation/re
+port/figures/map-cases-us.jpg  used on input line 425.
+(pdftex.def)             Requested size: 422.78723pt x 238.39984pt.
+[6]
+<C:/Users/skent/Box/_Projects/nyt-article-recreation/report/figures/map-deaths-
+us.jpg, id=138, 692.5875pt x 389.0535pt>
+File: C:/Users/skent/Box/_Projects/nyt-article-recreation/report/figures/map-de
+aths-us.jpg Graphic file (type jpg)
+<use C:/Users/skent/Box/_Projects/nyt-article-recreation/report/figures/map-dea
+ths-us.jpg>
+Package pdftex.def Info: C:/Users/skent/Box/_Projects/nyt-article-recreation/re
+port/figures/map-deaths-us.jpg  used on input line 467.
+(pdftex.def)             Requested size: 422.78423pt x 237.49443pt.
+LaTeX Font Info:    Try loading font information for TS1+phv on input line 511.
+
+("C:\Users\skent\AppData\Local\Programs\MiKTeX 2.9\tex\latex\psnfss\ts1phv.fd"
+File: ts1phv.fd 2001/06/04 scalable font definitions for TS1/phv.
+) [7 <C:/Users/skent/Box/_Projects/nyt-article-recreation/report/figures/map-ca
+ses-us.jpg>] [8 <C:/Users/skent/Box/_Projects/nyt-article-recreation/report/fig
+ures/map-deaths-us.jpg>] [9] [10]
+Package atveryend Info: Empty hook `BeforeClearDocument' on input line 591.
+Package atveryend Info: Empty hook `AfterLastShipout' on input line 591.
 (report.aux)
-Package atveryend Info: Executing hook `AtVeryEndDocument' on input line 445.
-Package atveryend Info: Executing hook `AtEndAfterFileList' on input line 445.
+Package atveryend Info: Executing hook `AtVeryEndDocument' on input line 591.
+Package atveryend Info: Executing hook `AtEndAfterFileList' on input line 591.
 Package rerunfilecheck Info: File `report.out' has not changed.
-(rerunfilecheck)             Checksum: 3668A7B4759307D2FC7FB883956AD32A;2679.
-Package atveryend Info: Empty hook `AtVeryVeryEnd' on input line 445.
+(rerunfilecheck)             Checksum: D22C0110DDCABF1814114FC53B6FABA8;2679.
+Package atveryend Info: Empty hook `AtVeryVeryEnd' on input line 591.
  ) 
 Here is how much of TeX's memory you used:
- 25065 strings out of 493301
- 441269 string characters out of 3129629
- 509187 words of memory out of 3000000
- 27961 multiletter control sequences out of 15000+200000
- 61107 words of font info for 149 fonts, out of 3000000 for 9000
+ 25087 strings out of 493301
+ 442126 string characters out of 3129629
+ 509619 words of memory out of 3000000
+ 27970 multiletter control sequences out of 15000+200000
+ 61482 words of font info for 154 fonts, out of 3000000 for 9000
  1141 hyphenation exceptions out of 8191
- 55i,6n,54p,576b,393s stack positions out of 5000i,500n,10000p,200000b,50000s
+ 55i,6n,54p,579b,397s stack positions out of 5000i,500n,10000p,200000b,50000s
 {C:/Users/skent/AppData/Local/Programs/MiKTeX 2.9/fonts/enc/dvips/lm/lm-mathi
 t.enc}{C:/Users/skent/AppData/Local/Programs/MiKTeX 2.9/fonts/enc/dvips/lm/lm-m
 athsy.enc}{C:/Users/skent/AppData/Local/Programs/MiKTeX 2.9/fonts/enc/dvips/lm/
@@ -1635,9 +1657,9 @@ fonts/type1/public/lm/lmsy10.pfb><C:/Users/skent/AppData/Local/Programs/MiKTeX
 eX 2.9/fonts/type1/urw/helvetic/uhvb8a.pfb><C:/Users/skent/AppData/Local/Progra
 ms/MiKTeX 2.9/fonts/type1/urw/helvetic/uhvr8a.pfb><C:/Users/skent/AppData/Local
 /Programs/MiKTeX 2.9/fonts/type1/urw/helvetic/uhvro8a.pfb>
-Output written on report.pdf (7 pages, 211272 bytes).
+Output written on report.pdf (10 pages, 960533 bytes).
 PDF statistics:
- 200 PDF objects out of 1000 (max. 8388607)
- 43 named destinations out of 1000 (max. 500000)
- 20631 words of extra memory for PDF output out of 20736 (max. 10000000)
+ 219 PDF objects out of 1000 (max. 8388607)
+ 48 named destinations out of 1000 (max. 500000)
+ 20641 words of extra memory for PDF output out of 20736 (max. 10000000)
 
