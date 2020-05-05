@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.19 (MiKTeX 2.9.6630 64-bit) (preloaded format=pdflatex 2018.3.20)  5 MAY 2020 10:08
+This is pdfTeX, Version 3.14159265-2.6-1.40.19 (MiKTeX 2.9.6630 64-bit) (preloaded format=pdflatex 2018.3.20)  5 MAY 2020 10:25
 entering extended mode
 **./report.tex
 (report.tex
@@ -1647,9 +1647,9 @@ port/figures/new-cases-cases.png  used on input line 562.
 (pdftex.def)             Requested size: 422.78973pt x 271.7934pt.
 [8 <C:/Users/skent/Box/_Projects/nyt-article-recreation/report/figures/map-deat
 hs-us.jpg>] [9 <C:/Users/skent/Box/_Projects/nyt-article-recreation/report/figu
-res/unemployment-time.png> <C:/Users/skent/Box/_Projects/nyt-article-recreation
-/report/figures/unemployment-cases.png>] [10 <C:/Users/skent/Box/_Projects/nyt-
-article-recreation/report/figures/new-cases-cases.png>] [11]
+res/unemployment-time.png>] [10 <C:/Users/skent/Box/_Projects/nyt-article-recre
+ation/report/figures/unemployment-cases.png>] [11 <C:/Users/skent/Box/_Projects
+/nyt-article-recreation/report/figures/new-cases-cases.png>]
 
 Package xcolor Warning: Incompatible color definition on input line 660.
 
@@ -1657,36 +1657,39 @@ Package xcolor Warning: Incompatible color definition on input line 660.
 Package xcolor Warning: Incompatible color definition on input line 663.
 
 
-Package xcolor Warning: Incompatible color definition on input line 668.
+Package xcolor Warning: Incompatible color definition on input line 667.
 
 
-Package xcolor Warning: Incompatible color definition on input line 671.
+Package xcolor Warning: Incompatible color definition on input line 672.
 
 
 Package xcolor Warning: Incompatible color definition on input line 675.
 
 
-Package xcolor Warning: Incompatible color definition on input line 678.
+Package xcolor Warning: Incompatible color definition on input line 679.
 
 
 Package xcolor Warning: Incompatible color definition on input line 682.
 
+
+Package xcolor Warning: Incompatible color definition on input line 686.
+
 [12]
-Package atveryend Info: Empty hook `BeforeClearDocument' on input line 685.
-Package atveryend Info: Empty hook `AfterLastShipout' on input line 685.
+Package atveryend Info: Empty hook `BeforeClearDocument' on input line 689.
+Package atveryend Info: Empty hook `AfterLastShipout' on input line 689.
 (report.aux)
-Package atveryend Info: Executing hook `AtVeryEndDocument' on input line 685.
-Package atveryend Info: Executing hook `AtEndAfterFileList' on input line 685.
+Package atveryend Info: Executing hook `AtVeryEndDocument' on input line 689.
+Package atveryend Info: Executing hook `AtEndAfterFileList' on input line 689.
 Package rerunfilecheck Info: File `report.out' has not changed.
 (rerunfilecheck)             Checksum: 939F02470BD3ECB3CD133CA51E65BA4A;2611.
-Package atveryend Info: Empty hook `AtVeryVeryEnd' on input line 685.
+Package atveryend Info: Empty hook `AtVeryVeryEnd' on input line 689.
  ) 
 Here is how much of TeX's memory you used:
- 25077 strings out of 493301
- 442898 string characters out of 3129629
- 510737 words of memory out of 3000000
+ 25083 strings out of 493301
+ 442958 string characters out of 3129629
+ 511172 words of memory out of 3000000
  27955 multiletter control sequences out of 15000+200000
- 61419 words of font info for 157 fonts, out of 3000000 for 9000
+ 61921 words of font info for 161 fonts, out of 3000000 for 9000
  1141 hyphenation exceptions out of 8191
  55i,6n,54p,579b,345s stack positions out of 5000i,500n,10000p,200000b,50000s
 {C:/Users/skent/AppData/Local/Programs/MiKTeX 2.9/fonts/enc/dvips/lm/lm-mathi
@@ -1706,9 +1709,9 @@ fonts/type1/public/lm/lmsy10.pfb><C:/Users/skent/AppData/Local/Programs/MiKTeX
 eX 2.9/fonts/type1/urw/helvetic/uhvb8a.pfb><C:/Users/skent/AppData/Local/Progra
 ms/MiKTeX 2.9/fonts/type1/urw/helvetic/uhvr8a.pfb><C:/Users/skent/AppData/Local
 /Programs/MiKTeX 2.9/fonts/type1/urw/helvetic/uhvro8a.pfb>
-Output written on report.pdf (12 pages, 1046031 bytes).
+Output written on report.pdf (12 pages, 1047292 bytes).
 PDF statistics:
- 253 PDF objects out of 1000 (max. 8388607)
+ 254 PDF objects out of 1000 (max. 8388607)
  51 named destinations out of 1000 (max. 500000)
  20648 words of extra memory for PDF output out of 20736 (max. 10000000)
 
