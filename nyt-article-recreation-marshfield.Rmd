@@ -122,7 +122,7 @@ fig1 <- plot_ly(data = plot_data,
   layout(title = "") %>% 
   layout(xaxis = list(title = "Date"),
          yaxis = list(title = "Average Daily Change (Last 7 Days)",
-                      range = c(0, 1),
+                      # range = c(0, 1),
                       tickformat = "%")) %>% 
   config(doubleClickDelay = 500)
 
@@ -181,7 +181,7 @@ fig2 <- plot_ly(data = plot_data,
   layout(title = "") %>% 
   layout(xaxis = list(title = "Confirmed Cases Per Thousand People"),
          yaxis = list(title = "Average Daily Change (Last 7 Days)",
-                      range = c(0, 1),
+                      # range = c(0, 1),
                       tickformat = "%")) %>% 
   config(doubleClickDelay = 500)
 
@@ -466,7 +466,7 @@ fig4
 
 <!-- ``` -->
 
-## Map of Marshfield Clinic Areas and Adjacent Counties
+## Map of Marshfield Clinic Areas
 
 *This plot is interactive*: hover over a metropolitan area to see the exact case counts, population, and per capita measurements. 
 
@@ -477,24 +477,26 @@ county <-
   maps::map("county", plot = FALSE, fill = TRUE) %>%
   sf::st_as_sf() %>%
   separate(ID, c("state", "county"), ",") %>%
-  filter(state %in% c("wisconsin")) %>% 
+  filter(state == "wisconsin") %>% 
   mutate(state = tools::toTitleCase(state),
          county = tools::toTitleCase(county))
 
 marshfield_current_date <- 
   us_counties %>% 
   filter(county %in% wi_counties & state == "Wisconsin") %>% 
-  filter(date == max(date, na.rm = TRUE) | is.na(date)) %>% 
-  mutate(clinic.area = TRUE)
+  filter(date == max(date, na.rm = TRUE) | is.na(date))
 
 ```
 
 ```{r dpi = 96}
 ## US Metro Map (Cases)
-fig9 <- county %>%
+fig9 <- county %>% 
+  mutate(county = ifelse(county == "Fond Du Lac", "Fond du Lac", county),
+         county = ifelse(county == "St Croix", "St. Croix", county)) %>% 
+  mutate(clinic.area = ifelse(county %in% wi_counties, TRUE, NA)) %>%
   left_join(marshfield_current_date, by = c("state", "county")) %>%
   left_join(county_population, by = c("state", "county")) %>% 
-  # filter(!is.na(clinic.area)) %>%
+  # filter(clinic.area) %>%
   mutate(name = ifelse(is.na(clinic.area), state, paste0(county, ", ", state))) %>% 
   group_by(name) %>%
   summarize(cases = sum(cases, na.rm = TRUE),
@@ -504,10 +506,10 @@ fig9 <- county %>%
   ungroup() %>%
   mutate(cases.per.1000 = round(cases / (population / 1000), 3),
          # cases.per.1000 = ifelse(cases.per.1000<=0.025, NA, cases.per.1000),
-         cases = ifelse(name %in% c("Wisconsin","Minnesota","Iowa","Illinois"), NA, cases),
-         population = ifelse(name %in% c("Wisconsin","Minnesota","Iowa","Illinois"), NA, population),
-         cases.per.1000 = ifelse(name %in% c("Wisconsin","Minnesota","Iowa","Illinois"), NA, cases.per.1000),
-         name = ifelse(name %in% c("Wisconsin","Minnesota","Iowa","Illinois"), paste0("Rest of ", name), name)) %>% 
+         cases = ifelse(name == "Wisconsin", NA, cases),
+         population = ifelse(name == "Wisconsin", NA, population),
+         cases.per.1000 = ifelse(name == "Wisconsin", NA, cases.per.1000),
+         name = ifelse(name == "Wisconsin", paste0("Rest of ", name), name)) %>% 
   mutate(cases.per.1000.tool.tip = cases.per.1000,
          cases.per.1000.rank = rank(-cases.per.1000, na.last = "keep", ties.method = "min"),
          cases.per.1000 = cut(cases.per.1000,
