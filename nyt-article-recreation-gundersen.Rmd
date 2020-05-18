@@ -222,6 +222,7 @@ plot_data <-
   arrange(date) %>% 
   mutate(new.cases = cases - lag(cases, 
                                  default = cases[1]),
+         new.cases = ifelse(new.cases < 0, 0, new.cases),
          roll.cases = rollapply(new.cases, 
                                 list(-(0:6)), 
                                 sum, 
@@ -274,6 +275,7 @@ plot_data <-
   arrange(date) %>% 
   mutate(new.cases = cases - lag(cases, 
                                  default = cases[1]),
+         new.cases = ifelse(new.cases < 0, 0, new.cases)
          roll.cases = rollapply(new.cases, 
                                 list(-(0:6)), 
                                 sum, 
