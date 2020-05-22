@@ -1,5 +1,5 @@
 ---
-title: "Coronavirus in the Wisconsin: How Fast It's Growing"
+title: "Coronavirus in Wisconsin: How Fast It's Growing"
 # author: "Srikanth Aravamuthan & Sean Kent"
 date: "Updated `r format(Sys.time(), '%B %d, %Y, %I:00 %p %Z')`"
 output: 
@@ -195,13 +195,18 @@ other_metroarea <-
 
 ## Summary
 
-#### This week (4/22/2020)
+
+#### This week (5/5/2020)
+
+All Wisconsin metropolitan areas are still seeing growth of COVID-19 confirmed cases.  Average daily change is slower in Madison, and Fond du Lac (around 1\% growth), but still moderately high in Green Bay (8.4\%), Janesville-Beloit (8.2\%), Appleton (7.2\%), and Racine (7.1\%).  Some of these areas are seeing increasing growth rates, which may indicate further spread or an increase in the number of tests for COVID-19 being performed.  In terms of the extent of COVID-19, the Green Bay metro area has over 4 cases per thousand residents as of May 3rd, which is by far the highest in Wisconsin.  This comes after several weeks of high growth.  Milwaukee still ranks second-highest in terms of confirmed cases per capita at around 2.4 per thousand but is growing slower than areas like Green Bay, Racine, and Janesville-Beloit.  If trends continue in those areas, Racine and Janesville-Beloit metropolitan areas may surpass Milwaukee in confirmed cases per thousand in the coming weeks.  While the outbreak is still early in Appleton, growth rates are increasing there, and this area should be monitored closely.  
+
+#### Last week (4/22/2020)
 
 Looking at daily growth rates of confirmed cases, the Green Bay metro area far outpaces any other Wisconsin metro area.  Confirmed cases in Green Bay are growing around 17-20% each day and confirmed cases have increased from 105 cases on April 14 to 327 on April 21.  Green Bay has about 1 confirmed case per thousand residents, which is the second-highest in Wisconsin metro areas (Milwaukee is the highest at 1.7 confirmed cases per thousand).  All other Wisconsin metro areas are showing daily growth rates between 0% and 5%.  Oshkosh-Neenah, Racine, and Janesville-Beloit are on the higher end of that range, with growth rates between 4.5% and 5.0% each day.  Racine now has the third-highest confirmed cases per thousand, around 0.94.  Madison recently saw a small uptick in growth rate, with 18 new cases from April 21 to April 22 (compared to less than 10 in previous days), but this may be tied to an increase in testing across the state (which can be seen on the [Wisconsin DHS website](https://www.dhs.wisconsin.gov/covid-19/data.htm#laboratory-testing-capacity))  
 
-#### Last week (4/16/2020)
+<!-- #### Last week (4/16/2020) -->
 
-Current daily growth rates of confirmed cases in Wisconsin metro areas range between 1.5% and 14%. Many metro areas (Milwaukee, Madison, Fond du Lac, Sheboygan, Appleton, Eau Claire) are seeing a slow decline in growth rates, but in all of those areas, confirmed cases are still growing.  Green Bay and Racine are among the highest growth rate metro areas with 13.6% growth and 10.8% growth, respectively, on 4/14.  More concerning is that these growth rates have been stable over the last week and not decreasing as many of the other metro areas have been.  Milwaukee has 1.4 confirmed cases per thousand residents, highest among Wisconsin metro areas.  Racine now has the second-highest confirmed cases per thousand residents at 0.68.  
+<!-- Current daily growth rates of confirmed cases in Wisconsin metro areas range between 1.5% and 14%. Many metro areas (Milwaukee, Madison, Fond du Lac, Sheboygan, Appleton, Eau Claire) are seeing a slow decline in growth rates, but in all of those areas, confirmed cases are still growing.  Green Bay and Racine are among the highest growth rate metro areas with 13.6% growth and 10.8% growth, respectively, on 4/14.  More concerning is that these growth rates have been stable over the last week and not decreasing as many of the other metro areas have been.  Milwaukee has 1.4 confirmed cases per thousand residents, highest among Wisconsin metro areas.  Racine now has the second-highest confirmed cases per thousand residents at 0.68.   -->
 
 <!-- #### Last Week (4/8/2020) -->
 
