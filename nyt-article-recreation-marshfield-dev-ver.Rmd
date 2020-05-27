@@ -1,0 +1,574 @@
+---
+title: "Coronavirus in Areas Served by Marshfield Clinic"
+# author: "Srikanth Aravamuthan & Sean Kent"
+date: "Updated `r format(Sys.time(), '%B %d, %Y, %I:00 %p %Z')`"
+output: 
+  html_document:
+    code_folding: hide
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = FALSE,
+  # cache = TRUE, 
+  message = FALSE,
+  warning = FALSE, 
+  fig.width = 10
+)
+
+library(tidyverse)
+library(purrr)
+library(lubridate)
+library(zoo)
+library(readxl)
+library(maps)
+library(sf)
+library(plotly)
+library(shiny)
+
+library(maptools)
+library(rgeos)
+
+```
+
+
+
+```{r data choices}
+## Data choices
+MIN_CASES_TO_PLOT <- 30
+MIN_DATE <- Sys.Date() - 28 # last 4 weeks
+MAX_DATE <- Sys.Date()
+
+window <- 14
+
+color_palette <- c(RColorBrewer::brewer.pal(21, "Paired"), rep("grey50", 20))
+```
+
+
+
+```{r nyt-data}
+# Data from the New York Times repository
+us_counties <- read_csv("https://raw.githubusercontent.com/nytimes/covid-19-data/master/us-counties.csv")
+us_states <- read_csv("https://raw.githubusercontent.com/nytimes/covid-19-data/master/us-states.csv")
+
+# NYT does this annoying thing where they count ("Kings", "Queens", "New York", "Bronx") counties 
+# as the 'county' New York City.  Attempt to fix by removing putting all of the cases/deaths in 
+# New York county, since we are aggregating by metro area anyways
+us_counties[us_counties$county == "New York City", "county"] <- "New York"
+
+```
+
+
+
+```{r population-data}
+## Population data from US census 2019 estimates
+county_population <- 
+  read_csv("https://www2.census.gov/programs-surveys/popest/datasets/2010-2019/counties/totals/co-est2019-alldata.csv") %>% 
+  filter(SUMLEV == "050") %>% 
+  mutate(CTYNAME = str_remove(CTYNAME, " County"),
+         CTYNAME = str_remove(CTYNAME, " Parish")) %>% 
+  rename(state = STNAME,
+         county = CTYNAME,
+         population = POPESTIMATE2019) %>% 
+  select(state, county, population)
+
+```
+
+
+
+```{r}
+wi_counties <- 
+  read_csv("https://raw.githubusercontent.com/skent259/nyt-article-recreation/master/Marshfield/WI_counties.byColor.csv", col_names = FALSE) %>% 
+  filter(X2 == "orange" | X1 == "Dodge") %>% 
+  select(X1) %>% 
+  pull()
+
+marshfield <- 
+  us_counties %>% 
+  filter(county %in% wi_counties & state == "Wisconsin")
+  
+```
+
+## Daily Growth Rate
+
+To assess the possible future of the outbreak, it’s helpful to look not just at the number of cases but also at how quickly they are increasing. The accompanying chart shows the growth rate of cumulative cases over time, averaged over the previous week.
+
+#### Daily growth rate of confirmed cases
+
+```{r dpi = 96}
+plot_data <- 
+  marshfield %>% 
+  mutate(county.state = paste0(county,", ",state)) %>% 
+  group_by(county.state) %>% 
+  arrange(date) %>% 
+  mutate(daily.change = (cases / lag(cases, n = window, default = NA))^(1 / window) - 1 ) %>% 
+  ungroup() %>% 
+  mutate(`Average Daily Change` = daily.change) %>% 
+  rename(Name = county.state,
+         Date = date,
+         Cases = cases) %>% 
+  filter(between(Date, MIN_DATE, MAX_DATE))
+
+fig1 <- plot_ly(data = plot_data,
+               x = ~Date,
+               y = ~`Average Daily Change`,
+               color = ~Name,
+               text = ~paste0("</br>", Name,
+                             "</br>", Date,
+                             "</br>Daily Change: ", scales::percent(daily.change, accuracy = 0.1)),
+               type = "scatter",
+               mode = 'lines+markers',
+               colors = "Paired",
+               alpha = 0.7,
+               hoverinfo = "text") %>% 
+  layout(title = "") %>% 
+  layout(xaxis = list(title = "Date"),
+         yaxis = list(title = paste0("Average Daily Change (Last ", window, " Days)"),
+                      # range = c(0, 1),
+                      tickformat = "%")) %>% 
+  config(doubleClickDelay = 500)
+
+fig1
+
+```
+
+*This plot is interactive*: Double click on a region in the legend to start a comparison and then single click on others to add or remove them from the comparison.  Note: double-clicking may not work well on all platforms, but you may single click on a region in the legend to remove from the comparison.  
+
+Here, we can see whether the trajectory of a local epidemic is getting better or worse. A growth rate of 40 percent on this chart means the cumulative number of cases is growing by 40 percent every day. A rate of 100 percent would mean that the number of cases is doubling daily.  Any growth rate above 0 percent means that there are still new daily cases.
+
+**Pros of this measure**: Growth rates help us judge whether the epidemic is getting better or worse in a given place right now.
+
+**Cons**: The timing of different outbreaks can make comparisons difficult. Case data quality varies a lot by place. Rates of change can vary significantly for counties with only a few cases.  
+
+
+## Growth Rates by Case Count
+
+The chart below shows the growth rate by the number of cases or deaths in a given metropolitan area.  In this chart, the goal for each region is to reach 0 percent daily change (y-axis) as fast as possible, before the confirmed cases per thousand (x-axis) get too large.  As long as the daily change in cases is above zero, the region will continue to see an increase in confirmed cases, and the line will continue to move to the right.  High growth rates combined with a lot of confirmed cases are a bad combination and may cause health systems to be overwhelmed.
+
+This measurement shows whether a community has succeeded in slowing the rate of growth before there are many cases. In other words, it shows whether a community is succeeding at flattening the curve.
+
+
+#### Daily growth rate of confirmed cases
+
+```{r dpi = 96}
+plot_data <- 
+  marshfield %>% 
+  left_join(county_population, by = c("state", "county")) %>% 
+  mutate(county.state = paste0(county,", ",state)) %>% 
+  group_by(county.state) %>% 
+  arrange(date) %>% 
+  mutate(daily.change = (cases / lag(cases, n = window, default = NA))^(1 / window) - 1 ) %>% 
+  ungroup() %>% 
+  mutate(`Confirmed Cases Per Thousand People` = cases / population * 1000) %>% 
+  mutate(`Average Daily Change` = daily.change) %>% 
+  rename(Name = county.state,
+         Date = date,
+         Cases = cases) %>% 
+  filter(between(Date, MIN_DATE, MAX_DATE))
+
+fig2 <- plot_ly(data = plot_data,
+               x = ~`Confirmed Cases Per Thousand People`,
+               y = ~`Average Daily Change`,
+               color = ~Name,
+               text = ~paste0("</br>", Name,
+                             "</br>", Date,
+                             "</br>Cases Per Thousand: ", 
+                             round(`Confirmed Cases Per Thousand People`, 3), 
+                             "</br>Daily Change: ", scales::percent(daily.change, accuracy = 0.1)),
+               type = "scatter",
+               mode = 'lines+markers',
+               colors = "Paired",
+               # alpha = 0.5,
+               hoverinfo = "text") %>% 
+  layout(title = "") %>% 
+  layout(xaxis = list(title = "Confirmed Cases Per Thousand People"),
+         yaxis = list(title = paste0("Average Daily Change (Last ", window, " Days)"),
+                      # range = c(0, 1),
+                      tickformat = "%")) %>% 
+  config(doubleClickDelay = 500)
+
+fig2
+
+```
+
+**Pros of this measure**: Helps distinguish between places where cases are growing fast with few cases and places where cases are numerous and still growing fast.
+
+**Cons**: Hard to read at first. Relies on case data.
+
+## New Cases by Case Count
+
+For some counties with a small number of cases, growth rates may be somewhat misleading.  A county with only 4 cases would have a 50% growth rate if it had 6 cases the next day.  In this case, the number of new cases might be more informative.  The accompanying chart shows a weekly average of new cases compared to the number of cases for various counties.  
+
+#### Weekly new cases
+
+```{r dpi = 96}
+plot_data <- 
+  marshfield %>% 
+  left_join(county_population, by = c("state", "county")) %>% 
+  mutate(county.state = paste0(county,", ",state)) %>% 
+  group_by(county.state) %>% 
+  arrange(date) %>% 
+  mutate(new.cases = cases - lag(cases, 
+                                 default = cases[1]),
+         new.cases = ifelse(new.cases < 0, 0, new.cases),
+         roll.cases = rollapply(new.cases, 
+                                list(-(0:(window-1))), 
+                                sum, 
+                                fill = NA, 
+                                align = "right", 
+                                partial = FALSE)) %>% 
+  ungroup() %>% 
+  mutate(`New Cases` = roll.cases) %>% 
+  rename(Name = county.state,
+         Date = date,
+         Cases = cases) %>% 
+  filter(between(Date, MIN_DATE, MAX_DATE))
+
+fig3 <- plot_ly(data = plot_data,
+               x = ~Cases,
+               y = ~`New Cases`,
+               color = ~Name,
+               text = ~paste0("</br>", Name,
+                             "</br>", Date,
+                             "</br>Cases: ", Cases, 
+                             "</br>New Cases (Daily Average over Last ", window, " Days): ", `New Cases`),
+               type = "scatter",
+               mode = 'lines+markers',
+               colors = "Paired",
+               # alpha = 0.5,
+               hoverinfo = "text") %>% 
+  layout(yaxis = list(title = paste0("New Cases (Daily Average over Last ", window, " Days)"))) %>% 
+  config(doubleClickDelay = 500)
+
+fig3
+
+```
+
+**Pros of this measure**: Helps distinguish between places where cases are growing fast with few cases and places where cases are numerous and still growing fast.  Works well for counties with only a few cases.  
+
+**Cons**: Relies on case data.  It doesn't account for county population.
+
+## New Cases per Capita by Case Count per Capita
+
+To understand how prevalent COVID-19 is within a given county, it's useful to look at the number of cases per person instead of the number of cases.  The accompanying chart is similar to the previous chart, but it shows new cases per 1,000 people living in the county compared to cases per 1,000 people living in the county.  
+
+#### Weekly new cases
+
+```{r dpi = 96}
+plot_data <- 
+  marshfield %>% 
+  left_join(county_population, by = c("state", "county")) %>% 
+  mutate(county.state = paste0(county,", ",state)) %>% 
+  group_by(county.state) %>% 
+  arrange(date) %>% 
+  mutate(new.cases = cases - lag(cases, 
+                                 default = cases[1]),
+         new.cases = ifelse(new.cases < 0, 0, new.cases),
+         roll.cases = rollapply(new.cases, 
+                                list(-(0:(window-1))), 
+                                sum, 
+                                fill = NA, 
+                                align = "right", 
+                                partial = FALSE)) %>% 
+  ungroup() %>% 
+  mutate(`New Cases Per Thousand People` = round(roll.cases / population * 1000, 3)) %>% 
+  mutate(`Cases Per Thousand People` = round(cases / population * 1000, 3)) %>% 
+  rename(Name = county.state,
+         Date = date,
+         Cases = cases) %>% 
+  filter(between(Date, MIN_DATE, MAX_DATE))
+
+fig4 <- plot_ly(data = plot_data,
+               x = ~`Cases Per Thousand People`,
+               y = ~`New Cases Per Thousand People`,
+               color = ~Name,
+               text = ~paste0("</br>", Name,
+                             "</br>", Date,
+                             "</br>Cases Per Thousand: ", `Cases Per Thousand People`, 
+                             "</br>New Cases Per Thousand </br>(Daily Average over Last ", window, " Days): ", `New Cases Per Thousand People`),
+               type = "scatter",
+               mode = 'lines+markers',
+               colors = "Paired",
+               # alpha = 0.5,
+               hoverinfo = "text") %>% 
+  layout(xaxis = list(title = "Cases Per Thousand People"),
+         yaxis = list(title = paste0("New Cases Per Thousand People (Daily Average over Last ", window, " Days)"))) %>% 
+  config(doubleClickDelay = 500)
+
+fig4
+
+```
+
+**Pros of this measure**: Helps distinguish between places where cases are growing fast with few cases and places where cases are numerous and still growing fast.  Works well for counties with only a few cases.  
+
+**Cons**: Relies on case data.  Data may be volatile for counties with few people.  
+
+<!-- ## Concept Plots -->
+
+<!-- ```{r dpi = 96} -->
+<!-- plot_data <-  -->
+<!--   marshfield %>%  -->
+<!--   left_join(county_population, by = c("state", "county")) %>%  -->
+<!--   mutate(county.state = paste0(county,", ",state)) %>%  -->
+<!--   group_by(county.state) %>%  -->
+<!--   arrange(date) %>%  -->
+<!--   mutate(new.cases = cases - lag(cases,  -->
+<!--                                  default = cases[1]), -->
+<!--          roll.cases = rollapply(new.cases,  -->
+<!--                                 list(-(0:6)),  -->
+<!--                                 sum,  -->
+<!--                                 fill = NA,  -->
+<!--                                 align = "right",  -->
+<!--                                 partial = FALSE)) %>%  -->
+<!--   ungroup() %>%  -->
+<!--   mutate(`New Cases Per Thousand People (Daily Average over Last 7 Days)` = round(roll.cases / population * 1000, 3)) %>%  -->
+<!--   rename(Name = county.state, -->
+<!--          Date = date, -->
+<!--          Cases = cases) %>%  -->
+<!--   filter(between(Date, MIN_DATE, MAX_DATE)) -->
+
+<!-- fig5 <- plot_ly(data = plot_data, -->
+<!--                x = ~Cases, -->
+<!--                y = ~`New Cases Per Thousand People (Daily Average over Last 7 Days)`, -->
+<!--                color = ~Name, -->
+<!--                text = ~paste0("</br>", Name, -->
+<!--                              "</br>", Date, -->
+<!--                              "</br>Cases: ", Cases,  -->
+<!--                              "</br>New Cases Per Thousand </br>(Daily Average over Last 7 Days): ", `New Cases Per Thousand People (Daily Average over Last 7 Days)`), -->
+<!--                type = "scatter", -->
+<!--                mode = 'lines+markers', -->
+<!--                colors = "Paired", -->
+<!--                # alpha = 0.5, -->
+<!--                hoverinfo = "text") %>%  -->
+<!--   layout(title = "") -->
+
+<!-- fig5 -->
+
+<!-- ``` -->
+
+<!-- ```{r dpi = 96} -->
+<!-- plot_data <-  -->
+<!--   marshfield %>%  -->
+<!--   left_join(county_population, by = c("state", "county")) %>%  -->
+<!--   mutate(county.state = paste0(county,", ",state)) %>%  -->
+<!--   group_by(county.state) %>%  -->
+<!--   arrange(date) %>%  -->
+<!--   mutate(new.cases = cases - lag(cases,  -->
+<!--                                  default = cases[1]), -->
+<!--          roll.cases = rollapply(new.cases,  -->
+<!--                                 list(-(0:6)),  -->
+<!--                                 sum,  -->
+<!--                                 fill = NA,  -->
+<!--                                 align = "right",  -->
+<!--                                 partial = FALSE)) %>%  -->
+<!--   ungroup() %>%  -->
+<!--   mutate(`New Cases (Daily Average over Last 7 Days)` = roll.cases) %>%  -->
+<!--   rename(Name = county.state, -->
+<!--          Date = date, -->
+<!--          Cases = cases) %>%  -->
+<!--   filter(between(Date, MIN_DATE, MAX_DATE)) -->
+
+<!-- fig6 <- plot_ly(data = plot_data, -->
+<!--                x = ~Date, -->
+<!--                y = ~`New Cases (Daily Average over Last 7 Days)`, -->
+<!--                color = ~Name, -->
+<!--                text = ~paste0("</br>", Name, -->
+<!--                              "</br>", Date, -->
+<!--                              "</br>Cases: ", Cases,  -->
+<!--                              "</br>New Cases (Daily Average over Last 7 Days): ", `New Cases (Daily Average over Last 7 Days)`), -->
+<!--                type = "scatter", -->
+<!--                mode = 'lines+markers', -->
+<!--                colors = "Paired", -->
+<!--                # alpha = 0.5, -->
+<!--                hoverinfo = "text") %>%  -->
+<!--   layout(title = "") -->
+
+<!-- fig6 -->
+
+<!-- ``` -->
+
+<!-- ```{r dpi = 96} -->
+<!-- plot_data <-  -->
+<!--   marshfield %>%  -->
+<!--   left_join(county_population, by = c("state", "county")) %>%  -->
+<!--   mutate(county.state = paste0(county,", ",state)) %>%  -->
+<!--   group_by(county.state) %>%  -->
+<!--   arrange(date) %>%  -->
+<!--   mutate(new.cases = cases - lag(cases,  -->
+<!--                                  default = cases[1]), -->
+<!--          roll.cases = rollapply(new.cases,  -->
+<!--                                 list(-(0:6)),  -->
+<!--                                 sum,  -->
+<!--                                 fill = NA,  -->
+<!--                                 align = "right",  -->
+<!--                                 partial = FALSE)) %>%  -->
+<!--   ungroup() %>%  -->
+<!--   mutate(`New Cases Per Thousand People (Daily Average over Last 7 Days)` = round(roll.cases / population * 1000, 3)) %>%  -->
+<!--   rename(Name = county.state, -->
+<!--          Date = date, -->
+<!--          Cases = cases) %>%  -->
+<!--   filter(between(Date, MIN_DATE, MAX_DATE)) -->
+
+<!-- fig7 <- plot_ly(data = plot_data, -->
+<!--                x = ~Date, -->
+<!--                y = ~`New Cases Per Thousand People (Daily Average over Last 7 Days)`, -->
+<!--                color = ~Name, -->
+<!--                text = ~paste0("</br>", Name, -->
+<!--                              "</br>", Date, -->
+<!--                              "</br>Cases: ", Cases,  -->
+<!--                              "</br>New Cases Per Thousand </br>(Daily Average over Last 7 Days): ", `New Cases Per Thousand People (Daily Average over Last 7 Days)`), -->
+<!--                type = "scatter", -->
+<!--                mode = 'lines+markers', -->
+<!--                colors = "Paired", -->
+<!--                # alpha = 0.5, -->
+<!--                hoverinfo = "text") %>%  -->
+<!--   layout(title = "") -->
+
+<!-- fig7 -->
+
+<!-- ``` -->
+
+<!-- ```{r dpi = 96} -->
+<!-- plot_data <-  -->
+<!--   marshfield %>%  -->
+<!--   left_join(county_population, by = c("state", "county")) %>%  -->
+<!--   mutate(county.state = paste0(county,", ",state)) %>%  -->
+<!--   group_by(county.state) %>%  -->
+<!--   arrange(date) %>%  -->
+<!--   mutate(new.cases = cases - lag(cases,  -->
+<!--                                  default = cases[1]), -->
+<!--          roll.cases = rollapply(new.cases,  -->
+<!--                                 list(-(0:6)),  -->
+<!--                                 sum,  -->
+<!--                                 fill = NA,  -->
+<!--                                 align = "right",  -->
+<!--                                 partial = FALSE)) %>%  -->
+<!--   ungroup() %>%  -->
+<!--   mutate(`New Cases (Daily Average over Last 7 Days)` = roll.cases) %>%  -->
+<!--   mutate(`Cases Per Thousand People` = round(cases / population * 1000, 3)) %>%  -->
+<!--   rename(Name = county.state, -->
+<!--          Date = date, -->
+<!--          Cases = cases) %>%  -->
+<!--   filter(between(Date, MIN_DATE, MAX_DATE)) -->
+
+<!-- fig8 <- plot_ly(data = plot_data, -->
+<!--                x = ~`Cases Per Thousand People`, -->
+<!--                y = ~`New Cases (Daily Average over Last 7 Days)`, -->
+<!--                color = ~Name, -->
+<!--                text = ~paste0("</br>", Name, -->
+<!--                              "</br>", Date, -->
+<!--                              "</br>Cases Per Thousand: ", `Cases Per Thousand People`,  -->
+<!--                              "</br>New Cases (Daily Average over Last 7 Days): ", `New Cases (Daily Average over Last 7 Days)`), -->
+<!--                type = "scatter", -->
+<!--                mode = 'lines+markers', -->
+<!--                colors = "Paired", -->
+<!--                # alpha = 0.5, -->
+<!--                hoverinfo = "text") %>%  -->
+<!--   layout(title = "") -->
+
+<!-- fig8 -->
+
+<!-- ``` -->
+
+## Map of Marshfield Clinic Areas
+
+*This plot is interactive*: hover over a metropolitan area to see the exact case counts, population, and per capita measurements. 
+
+#### Confirmed cases per thousand residents
+
+```{r}
+county <-
+  maps::map("county", plot = FALSE, fill = TRUE) %>%
+  sf::st_as_sf() %>%
+  separate(ID, c("state", "county"), ",") %>%
+  filter(state == "wisconsin") %>% 
+  mutate(state = tools::toTitleCase(state),
+         county = tools::toTitleCase(county))
+
+marshfield_current_date <- 
+  us_counties %>% 
+  filter(county %in% wi_counties & state == "Wisconsin") %>% 
+  filter(date == max(date, na.rm = TRUE) | is.na(date))
+
+```
+
+```{r dpi = 96}
+## US Metro Map (Cases)
+fig9 <- county %>% 
+  mutate(county = ifelse(county == "Fond Du Lac", "Fond du Lac", county),
+         county = ifelse(county == "St Croix", "St. Croix", county)) %>% 
+  mutate(clinic.area = ifelse(county %in% wi_counties, TRUE, NA)) %>%
+  left_join(marshfield_current_date, by = c("state", "county")) %>%
+  left_join(county_population, by = c("state", "county")) %>% 
+  # filter(clinic.area) %>%
+  mutate(name = ifelse(is.na(clinic.area), state, paste0(county, ", ", state))) %>% 
+  group_by(name) %>%
+  summarize(cases = sum(cases, na.rm = TRUE),
+            deaths = sum(deaths, na.rm = TRUE),
+            population = max(population, na.rm = TRUE),
+            geometry = sf::st_union(sf::st_buffer(geometry,0.0))) %>%
+  ungroup() %>%
+  mutate(cases.per.1000 = round(cases / (population / 1000), 3),
+         # cases.per.1000 = ifelse(cases.per.1000<=0.025, NA, cases.per.1000),
+         cases = ifelse(name == "Wisconsin", NA, cases),
+         population = ifelse(name == "Wisconsin", NA, population),
+         cases.per.1000 = ifelse(name == "Wisconsin", NA, cases.per.1000),
+         name = ifelse(name == "Wisconsin", paste0("Rest of ", name), name)) %>% 
+  mutate(cases.per.1000.tool.tip = cases.per.1000,
+         cases.per.1000.rank = rank(-cases.per.1000, na.last = "keep", ties.method = "min"),
+         cases.per.1000 = cut(cases.per.1000,
+                              c(min(cases.per.1000, na.rm = TRUE), 0.1, 0.25, 0.5, 1, 2, 4, max(cases.per.1000, na.rm = TRUE)))) %>%
+  # sf::st_transform(crs = "+proj=aea +lat_1=25 +lat_2=50 +lon_0=-100") %>% 
+  sf::st_cast("MULTIPOLYGON") %>%
+  plot_ly(split = ~name, 
+          color = ~cases.per.1000, 
+          colors = "YlGnBu", 
+          span = I(1),
+          stroke = I("gray50"),
+          alpha = 1,
+          text = ~paste0("</br>", name, 
+                         "</br>Cases: ", cases, 
+                         "</br>Population: ", population, 
+                         "</br>Cases per Thousand: ", cases.per.1000.tool.tip,
+                         " (", cases.per.1000.rank, " out of ", nrow(.)-4, ")"),
+          hoverinfo = "text",
+          hoveron = "fills") %>% 
+  layout(title="",
+         showlegend = FALSE) 
+# %>%
+#   colorbar(title = "Cases per Thousand")
+
+fig9
+
+```
+
+
+
+## Sources
+
+New York Times. New York Times database of U.S. coronavirus cases. 2020. Retrieved from <https://github.com/nytimes/covid-19-data>.
+
+United States Census Bureau, County Population Totals: 2010-2019. 2019. Retrieved from <https://www.census.gov/data/tables/time-series/demo/popest/2010s-counties-total.html>.
+
+## Appendix: Calculating Average Daily Change
+
+Calculate "Average Daily Change in Total Cases, Over the Previous `r window` Days" at time $t$ as
+
+$$
+\textrm{avg daily change}_t =  \left( \frac{\textrm{cases}_t}{\textrm{cases}_{t-`r window`}} \right)^{(1/`r window`)} - 1 
+$$
+
+## Appendix: Calculating New Cases (Daily Average over Last `r window` Days)
+
+Calculate "New Cases (Daily Average over Last `r window` Days)" at time $t$ as
+
+$$
+\textrm{new cases}_t =  \frac{1}{`r window`}\left( \textrm{cases}_t-\textrm{cases}_{t-`r window`}\right)
+$$
+
+
+
+<!-- ## Appendix: R Code -->
+
+```{r appendix, ref.label=knitr::all_labels(),echo=TRUE,eval=FALSE}
+```
