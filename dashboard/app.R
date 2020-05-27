@@ -43,48 +43,65 @@ ui <- dashboardPage(
       tabItem(
         tabName = "wi-metro",
         fluidRow(
-          tags$iframe(
-            seamless = "seamless", 
-            src = "https://data-viz.it.wisc.edu/wi-metro-growth-rate/", 
-            height = 800, width = 1400
-          )
+          htmlOutput("frame1")
         )
       ),
       tabItem(
         tabName = "gundersen",
         fluidRow(
-          tags$iframe(
-            seamless = "seamless", 
-            src = "https://data-viz.it.wisc.edu/wi-metro-growth-gundersen/", 
-            height = 800, width = 1400
-          )
+          htmlOutput("frame2")
         )
       ),
       tabItem(
         tabName = "marshfield",
         fluidRow(
-          tags$iframe(
-            seamless = "seamless", 
-            src = "https://data-viz.it.wisc.edu/wi-metro-growth-marshfield", 
-            height = 800, width = 1400
-          )
+          htmlOutput("frame3")
         )
       ),
       tabItem(
         tabName = "dev-ver",
         fluidRow(
-          tags$iframe(
-            seamless = "seamless", 
-            src = "https://data-viz.it.wisc.edu/dev-ver", 
-            height = 800, width = 1400
-          )
+          htmlOutput("frame4")
         )
       )
     )
   )
 )
 
-server <- function(input, output) {}
+server <- function(input, output) {
+  output$frame1 <- 
+    renderUI({
+      tags$iframe(
+        seamless = "seamless", 
+        src = "https://data-viz.it.wisc.edu/wi-metro-growth-rate/", 
+        height = 800, width = 1400
+      )
+    })
+  output$frame2 <- 
+    renderUI({
+      tags$iframe(
+        seamless = "seamless", 
+        src = "https://data-viz.it.wisc.edu/wi-metro-growth-gundersen/", 
+        height = 800, width = 1400
+      )
+    })
+  output$frame3 <- 
+    renderUI({
+      tags$iframe(
+        seamless = "seamless", 
+        src = "https://data-viz.it.wisc.edu/wi-metro-growth-marshfield/", 
+        height = 800, width = 1400
+      )
+    })
+  output$frame4 <- 
+    renderUI({
+      tags$iframe(
+        seamless = "seamless", 
+        src = "https://data-viz.it.wisc.edu/dev-ver/", 
+        height = 800, width = 1400
+      )
+    })
+}
 shinyApp(ui, server)
 
 
