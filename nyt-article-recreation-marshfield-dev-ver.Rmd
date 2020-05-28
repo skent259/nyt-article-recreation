@@ -580,6 +580,8 @@ $$
 \textrm{new cases}_t =  \frac{1}{`r window`}\left( \textrm{cases}_t-\textrm{cases}_{t-`r window`}\right)
 $$
 
+## Appendix: Calculating Doubling Time
+
 Calculate Doubling Time $x$ at time $t$ as
 
 $$
