@@ -101,9 +101,13 @@ plot_data <-
   mutate(county.state = paste0(county,", ",state)) %>% 
   group_by(county.state) %>% 
   arrange(date) %>% 
+  mutate(cum.max.cases = cummax(cases),
+         cases = ifelse(cases < cum.max.cases, cum.max.cases, cases)) %>% 
   mutate(daily.change = (cases / lag(cases, n = window, default = NA))^(1 / window) - 1 ) %>% 
   ungroup() %>% 
-  mutate(`Average Daily Change` = daily.change) %>% 
+  mutate(`Average Daily Change` = daily.change,
+         `Doubling Time` = log10(2)/log10(daily.change+1),
+         `Doubling Time` = ifelse(is.infinite(`Doubling Time`), NA, `Doubling Time`)) %>% 
   rename(Name = county.state,
          Date = date,
          Cases = cases) %>% 
@@ -115,7 +119,8 @@ fig1 <- plot_ly(data = plot_data,
                color = ~Name,
                text = ~paste0("</br>", Name,
                              "</br>", Date,
-                             "</br>Daily Change: ", scales::percent(daily.change, accuracy = 0.1)),
+                             "</br>Daily Change: ", scales::percent(daily.change, accuracy = 0.1),
+                             "</br>Doubling Time: ", round(`Doubling Time`, 3), " days"),
                type = "scatter",
                mode = 'lines+markers',
                colors = "Paired",
@@ -157,10 +162,14 @@ plot_data <-
   mutate(county.state = paste0(county,", ",state)) %>% 
   group_by(county.state) %>% 
   arrange(date) %>% 
+  mutate(cum.max.cases = cummax(cases),
+         cases = ifelse(cases < cum.max.cases, cum.max.cases, cases)) %>% 
   mutate(daily.change = (cases / lag(cases, n = window, default = NA))^(1 / window) - 1 ) %>% 
   ungroup() %>% 
   mutate(`Confirmed Cases Per Thousand People` = cases / population * 1000) %>% 
-  mutate(`Average Daily Change` = daily.change) %>% 
+  mutate(`Average Daily Change` = daily.change,
+         `Doubling Time` = log10(2)/log10(daily.change+1),
+         `Doubling Time` = ifelse(is.infinite(`Doubling Time`), NA, `Doubling Time`)) %>% 
   rename(Name = county.state,
          Date = date,
          Cases = cases) %>% 
@@ -174,7 +183,8 @@ fig2 <- plot_ly(data = plot_data,
                              "</br>", Date,
                              "</br>Cases Per Thousand: ", 
                              round(`Confirmed Cases Per Thousand People`, 3), 
-                             "</br>Daily Change: ", scales::percent(daily.change, accuracy = 0.1)),
+                             "</br>Daily Change: ", scales::percent(daily.change, accuracy = 0.1),
+                             "</br>Doubling Time: ", round(`Doubling Time`, 3), " days"),
                type = "scatter",
                mode = 'lines+markers',
                colors = "Paired",
@@ -208,6 +218,8 @@ plot_data <-
   mutate(county.state = paste0(county,", ",state)) %>% 
   group_by(county.state) %>% 
   arrange(date) %>% 
+  mutate(cum.max.cases = cummax(cases),
+         cases = ifelse(cases < cum.max.cases, cum.max.cases, cases)) %>% 
   mutate(new.cases = cases - lag(cases, 
                                  default = cases[1]),
          new.cases = ifelse(new.cases < 0, 0, new.cases),
@@ -261,6 +273,8 @@ plot_data <-
   mutate(county.state = paste0(county,", ",state)) %>% 
   group_by(county.state) %>% 
   arrange(date) %>% 
+  mutate(cum.max.cases = cummax(cases),
+         cases = ifelse(cases < cum.max.cases, cum.max.cases, cases)) %>% 
   mutate(new.cases = cases - lag(cases, 
                                  default = cases[1]),
          new.cases = ifelse(new.cases < 0, 0, new.cases),
@@ -566,7 +580,20 @@ $$
 \textrm{new cases}_t =  \frac{1}{`r window`}\left( \textrm{cases}_t-\textrm{cases}_{t-`r window`}\right)
 $$
 
+Calculate Doubling Time $x$ at time $t$ as
 
+$$
+\begin{aligned}
+  \frac{c}{c_0} &= \frac{2^{1/x \times t}}{2^{1/x \times t_0}} \\
+  &= 2^{1/x \times (t-t_0)} \\
+  x &= \frac{(t-t_0)\log_{10}(2)}{\log_{10}(c/c_0)} \\
+  \frac{c_1}{c_0} &= (\Delta_t+1)^{`r window`} \\
+  x &= \frac{`r window`\log_{10}(2)}{\log_{10}((\Delta_t+1)^{`r window`})} \\
+  &= \frac{\log_{10}(2)}{\log_{10}(\Delta_t+1)} \\
+\end{aligned}
+$$
+
+where $c$ is the number of cases at time $t$, $c_0$ is the number of cases at time $t_0=t-`r window`$, and $\Delta_t+1$ is the average daily change.
 
 <!-- ## Appendix: R Code -->
 
