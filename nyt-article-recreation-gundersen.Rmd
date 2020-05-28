@@ -112,6 +112,8 @@ plot_data <-
   gundersen %>% 
   mutate(county.state = paste0(county,", ",state)) %>% 
   group_by(county.state) %>% 
+  arrange(desc(date)) %>% 
+  mutate(cases = cummin(cases)) %>% 
   arrange(date) %>% 
   mutate(daily.change = (cases / lag(cases, n = 7, default = NA))^(1 / 7) - 1 ) %>% 
   ungroup() %>% 
@@ -168,6 +170,8 @@ plot_data <-
   left_join(county_population, by = c("state", "county")) %>% 
   mutate(county.state = paste0(county,", ",state)) %>% 
   group_by(county.state) %>% 
+  arrange(desc(date)) %>% 
+  mutate(cases = cummin(cases)) %>% 
   arrange(date) %>% 
   mutate(daily.change = (cases / lag(cases, n = 7, default = NA))^(1 / 7) - 1 ) %>% 
   ungroup() %>% 
@@ -219,10 +223,12 @@ plot_data <-
   left_join(county_population, by = c("state", "county")) %>% 
   mutate(county.state = paste0(county,", ",state)) %>% 
   group_by(county.state) %>% 
+  arrange(desc(date)) %>% 
+  mutate(cases = cummin(cases)) %>% 
   arrange(date) %>% 
   mutate(new.cases = cases - lag(cases, 
                                  default = cases[1]),
-         new.cases = ifelse(new.cases < 0, 0, new.cases),
+         # new.cases = ifelse(new.cases < 0, 0, new.cases),
          roll.cases = rollapply(new.cases, 
                                 list(-(0:6)), 
                                 sum, 
@@ -272,10 +278,12 @@ plot_data <-
   left_join(county_population, by = c("state", "county")) %>% 
   mutate(county.state = paste0(county,", ",state)) %>% 
   group_by(county.state) %>% 
+  arrange(desc(date)) %>% 
+  mutate(cases = cummin(cases)) %>% 
   arrange(date) %>% 
   mutate(new.cases = cases - lag(cases, 
                                  default = cases[1]),
-         new.cases = ifelse(new.cases < 0, 0, new.cases),
+         # new.cases = ifelse(new.cases < 0, 0, new.cases),
          roll.cases = rollapply(new.cases, 
                                 list(-(0:6)), 
                                 sum, 
