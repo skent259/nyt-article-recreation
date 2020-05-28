@@ -589,13 +589,13 @@ $$
   \frac{c}{c_0} &= \frac{2^{1/x \times t}}{2^{1/x \times t_0}} \\
   &= 2^{1/x \times (t-t_0)} \\
   x &= \frac{(t-t_0)\log_{10}(2)}{\log_{10}(c/c_0)} \\
-  \frac{c_1}{c_0} &= (\Delta_t+1)^{`r window`} \\
+  \frac{c}{c_0} &= (\Delta_t+1)^{`r window`} \\
   x &= \frac{`r window`\log_{10}(2)}{\log_{10}((\Delta_t+1)^{`r window`})} \\
   &= \frac{\log_{10}(2)}{\log_{10}(\Delta_t+1)} \\
 \end{aligned}
 $$
 
-where $c$ is the number of cases at time $t$, $c_0$ is the number of cases at time $t_0=t-`r window`$, and $\Delta_t+1$ is the average daily change.
+where $c$ is the number of cases at time $t$, $c_0$ is the number of cases at time $t_0=t-`r window`$, and $\Delta_t$ is the average daily change.
 
 <!-- ## Appendix: R Code -->
 
