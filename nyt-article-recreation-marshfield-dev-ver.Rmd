@@ -205,6 +205,31 @@ fig2
 
 **Cons**: Hard to read at first. Relies on case data.
 
+
+
+```{r results='asis'}
+first.case <- 
+  marshfield %>% 
+  filter(cases != 0) %>% 
+  mutate(county.state = paste0(county,", ",state)) %>% 
+  group_by(county.state) %>% 
+  # arrange(date) %>% 
+  # filter(first(date) >= (Sys.Date()-window)) %>% 
+  filter(min(date) >= (Sys.Date()-window)) %>% 
+  ungroup() %>% 
+  select(county.state) %>% 
+  distinct() %>% 
+  pull()
+
+if(length(first.case) > 0) {
+  cat(paste0("**The following counties had their first cases in the last ", window," days, therefore do not appear in the previous plots:**\n\n"))
+  cat(paste0("- ", first.case, '\n'))
+}
+
+```
+
+
+
 ## New Cases by Case Count
 
 For some counties with a small number of cases, growth rates may be somewhat misleading.  A county with only 4 cases would have a 50% growth rate if it had 6 cases the next day.  In this case, the number of new cases might be more informative.  The accompanying chart shows a weekly average of new cases compared to the number of cases for various counties.  
