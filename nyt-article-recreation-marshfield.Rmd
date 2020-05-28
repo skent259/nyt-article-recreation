@@ -515,7 +515,7 @@ fig9 <- county %>%
   mutate(cases.per.1000.tool.tip = cases.per.1000,
          cases.per.1000.rank = rank(-cases.per.1000, na.last = "keep", ties.method = "min"),
          cases.per.1000 = cut(cases.per.1000,
-                              c(min(cases.per.1000, na.rm = TRUE), 0.1, 0.25, 0.5, 1, 2, 4, max(cases.per.1000, na.rm = TRUE)))) %>%
+                              c(0.001, 0.1, 0.25, 0.5, 1, 2, 4, 1000))) %>%
   # sf::st_transform(crs = "+proj=aea +lat_1=25 +lat_2=50 +lon_0=-100") %>% 
   sf::st_cast("MULTIPOLYGON") %>%
   plot_ly(split = ~name, 
@@ -528,7 +528,7 @@ fig9 <- county %>%
                          "</br>Cases: ", cases, 
                          "</br>Population: ", population, 
                          "</br>Cases per Thousand: ", cases.per.1000.tool.tip,
-                         " (", cases.per.1000.rank, " out of ", nrow(.)-4, ")"),
+                         " (", cases.per.1000.rank, " out of ", nrow(.)-1, ")"),
           hoverinfo = "text",
           hoveron = "fills") %>% 
   layout(title="",
