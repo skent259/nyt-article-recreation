@@ -2,6 +2,7 @@
 *.pdf
 .Rproj.user
 data/
+feedback/
 presentation/presentation_files
 presentation/presentation_no-plots_files
 presentation/presentation_for-sharing_files
