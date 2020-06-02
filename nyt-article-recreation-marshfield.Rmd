@@ -109,21 +109,62 @@ plot_data <-
          Cases = cases) %>% 
   filter(between(Date, MIN_DATE, MAX_DATE))
 
-fig1 <- plot_ly(data = plot_data,
-               x = ~Date,
-               y = ~`Average Daily Change (Last 7 Days)`,
-               color = ~Name,
-               text = ~paste0("</br>", Name,
-                             "</br>", Date,
-                             "</br>Daily Change: ", scales::percent(daily.change, accuracy = 0.1)),
-               type = "scatter",
-               mode = 'lines+markers',
-               colors = "Paired",
-               alpha = 0.7,
-               hoverinfo = "text") %>% 
+plot_data_top_10 <- 
+  plot_data %>% 
+  group_by(Date) %>% 
+  mutate(Rank = rank(-daily.change)) %>% 
+  ungroup() %>% 
+  group_by(Name) %>% 
+  arrange(Date) %>% 
+  # filter(last(daily.change) >= 0.05) %>% 
+  filter(last(Rank) <= 10) %>% 
+  ungroup()
+
+plot_data_bottom_n <- 
+  plot_data %>% 
+  group_by(Date) %>% 
+  mutate(Rank = rank(-daily.change)) %>% 
+  ungroup() %>% 
+  group_by(Name) %>% 
+  arrange(Date) %>% 
+  # filter(last(daily.change) >= 0.05) %>% 
+  filter(last(Rank) > 10) %>% 
+  ungroup()
+
+fig1 <- 
+  plot_ly(data = plot_data_top_10,
+          x = ~Date,
+          y = ~`Average Daily Change (Last 7 Days)`,
+          color = ~Name,
+          text = ~paste0("</br>", Name,
+                         "</br>", Date,
+                         "</br>Daily Change: ", scales::percent(daily.change, accuracy = 0.1)),
+          type = "scatter",
+          mode = 'lines+markers',
+          colors = "Paired",
+          alpha = 0.7,
+          hoverinfo = "text") %>% 
   layout(title = "") %>% 
   layout(xaxis = list(title = "Date"),
-         yaxis = list(title = "Average Daily Change (Last 7 Days)",
+         yaxis = list(title = paste0("Average Daily Change (Last 7 Days)"),
+                      # range = c(0, 1),
+                      tickformat = "%")) %>% 
+  add_trace(data = plot_data_bottom_n,
+            x = ~Date,
+            y = ~`Average Daily Change (Last 7 Days)`,
+            color = ~Name,
+            text = ~paste0("</br>", Name,
+                           "</br>", Date,
+                           "</br>Daily Change: ", scales::percent(daily.change, accuracy = 0.1)),
+            type = "scatter",
+            mode = 'lines+markers',
+            colors = "Paired",
+            alpha = 0.7,
+            hoverinfo = "text",
+            visible = "legendonly") %>% 
+  layout(title = "") %>% 
+  layout(xaxis = list(title = "Date"),
+         yaxis = list(title = paste0("Average Daily Change (Last 7 Days)"),
                       # range = c(0, 1),
                       tickformat = "%")) %>% 
   config(doubleClickDelay = 500)
@@ -168,7 +209,29 @@ plot_data <-
          Cases = cases) %>% 
   filter(between(Date, MIN_DATE, MAX_DATE))
 
-fig2 <- plot_ly(data = plot_data,
+plot_data_top_10 <- 
+  plot_data %>% 
+  group_by(Date) %>% 
+  mutate(Rank = rank(-daily.change)) %>% 
+  ungroup() %>% 
+  group_by(Name) %>% 
+  arrange(Date) %>% 
+  # filter(last(daily.change) >= 0.05) %>% 
+  filter(last(Rank) <= 10) %>% 
+  ungroup()
+
+plot_data_bottom_n <- 
+  plot_data %>% 
+  group_by(Date) %>% 
+  mutate(Rank = rank(-daily.change)) %>% 
+  ungroup() %>% 
+  group_by(Name) %>% 
+  arrange(Date) %>% 
+  # filter(last(daily.change) >= 0.05) %>% 
+  filter(last(Rank) > 10) %>% 
+  ungroup()
+
+fig2 <- plot_ly(data = plot_data_top_10,
                x = ~`Confirmed Cases Per Thousand People`,
                y = ~`Average Daily Change (Last 7 Days)`,
                color = ~Name,
@@ -184,7 +247,27 @@ fig2 <- plot_ly(data = plot_data,
                hoverinfo = "text") %>% 
   layout(title = "") %>% 
   layout(xaxis = list(title = "Confirmed Cases Per Thousand People"),
-         yaxis = list(title = "Average Daily Change (Last 7 Days)",
+         yaxis = list(title = paste0("Average Daily Change (Last 7 Days)"),
+                      # range = c(0, 1),
+                      tickformat = "%")) %>% 
+  add_trace(data = plot_data_bottom_n,
+            x = ~`Confirmed Cases Per Thousand People`,
+            y = ~`Average Daily Change (Last 7 Days)`,
+            color = ~Name,
+            text = ~paste0("</br>", Name,
+                           "</br>", Date,
+                           "</br>Cases Per Thousand: ", 
+                           round(`Confirmed Cases Per Thousand People`, 3), 
+                           "</br>Daily Change: ", scales::percent(daily.change, accuracy = 0.1)),
+            type = "scatter",
+            mode = 'lines+markers',
+            colors = "Paired",
+            # alpha = 0.5,
+            hoverinfo = "text",
+            visible = "legendonly") %>% 
+  layout(title = "") %>% 
+  layout(xaxis = list(title = "Confirmed Cases Per Thousand People"),
+         yaxis = list(title = paste0("Average Daily Change (Last 7 Days)"),
                       # range = c(0, 1),
                       tickformat = "%")) %>% 
   config(doubleClickDelay = 500)
