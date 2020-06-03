@@ -1,0 +1,12 @@
+name: nyt-article-recreation-marshfield-dev-ver
+title: nyt-article-recreation-marshfield-dev-ver
+username: aravamuthan
+account: aravamuthan
+server: data-viz.it.wisc.edu
+hostUrl: https://data-viz.it.wisc.edu/__api__
+appId: 44
+bundleId: 147
+url: https://data-viz.it.wisc.edu/dev-ver/
+when: 1590710766.01057
+asMultiple: FALSE
+asStatic: FALSE
