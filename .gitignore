@@ -1,7 +1,7 @@
 *.html
 *.pdf
 .Rproj.user
-*.DS_Store
+.DS_Store
 data/
 feedback/
 presentation/presentation_files
