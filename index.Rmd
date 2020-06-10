@@ -195,15 +195,18 @@ other_metroarea <-
 
 ## Summary
 
+#### Week of 6/8/2020
+
+Broadly speaking, there still doesn't appear to be a slowdown of COVID-19 growth in Wisconsin metropolitan areas. Some areas, including Milwaukee, Racine, Eau Claire, and Fond du Lac showed a slow down in growth rates; they all are growing at less than 2\% and were somewhat higher in the last few weeks.  The Green Bay area continues to see low growth at roughly 0.4\% after seeing an outbreak of cases in late-April and early-March.  Despite this progress, a few metro areas in Wisconsin are still growing. Oshkosh-Neenah is seeing a growth of confirmed cases over 6\%, and this has been persistently high for several weeks. The outbreak in the La Crosse-Onalaska metro area has seen a sharp uptick over the last week and is currently growing at around 5\%.  Comparing the confirmed cases per thousand, Racine has 9.8, Green Bay has 7.7, Milwaukee has 6.5, Janesville-Beloit has 4.9, and Oshkosh-Neenah has 2.5.  Janesville-Beloit may catch up to Milwaukee if the area's growth rate doesn't decline. Areas to watch closely over the next weeks are Oshkosh-Neenah, La Crosse-Onalaska, and Janesville-Beloit, as sustained growth in these areas could lead to these areas becoming very problematic.
+
 #### Week of 5/25/2020
 
 The growth of COVID-19 in Wisconsin metro areas continues, although at varying rates.  In the last week, the growth rate of confirmed cases ranged between 1\% and 6\% in metro areas.  On the higher end of growth is Oshkosh-Neenah at 6.1\% (and trending upwards) along with a cluster of metro areas--Janesville-Beloit, Racine, Eau Claire, and Appleton--around 4\% growth.  Green Bay, which had some of the largest growth in early May, is now the metro area with the slowest growth in Wisconsin at less than 1\%.  Madison continues to see low growth around 2\%, slightly higher than the growth from early May.  Milwaukee metro area also continues to see growth, although the growth in confirmed cases around 3.3\% is near the average among metro areas.  Looking at the extent of the spread of COVID-19, Racine and Green Bay have over 7 confirmed cases per thousand people, followed by Milwaukee at 4.7 and Janesville-Beloit at 3.5 cases per thousand.  All other metro areas are near or below 1 case per thousand, though this will rise with the moderate growth some areas are seeing.  
 
 
+<!-- #### Week of 5/5/2020 -->
 
-#### Week of 5/5/2020
-
-All Wisconsin metropolitan areas are still seeing growth of COVID-19 confirmed cases.  Average daily change is slower in Madison, and Fond du Lac (around 1\% growth), but still moderately high in Green Bay (8.4\%), Janesville-Beloit (8.2\%), Appleton (7.2\%), and Racine (7.1\%).  Some of these areas are seeing increasing growth rates, which may indicate further spread or an increase in the number of tests for COVID-19 being performed.  In terms of the extent of COVID-19, the Green Bay metro area has over 4 cases per thousand residents as of May 3rd, which is by far the highest in Wisconsin.  This comes after several weeks of high growth.  Milwaukee still ranks second-highest in terms of confirmed cases per capita at around 2.4 per thousand but is growing slower than areas like Green Bay, Racine, and Janesville-Beloit.  If trends continue in those areas, Racine and Janesville-Beloit metropolitan areas may surpass Milwaukee in confirmed cases per thousand in the coming weeks.  While the outbreak is still early in Appleton, growth rates are increasing there, and this area should be monitored closely.  
+<!-- All Wisconsin metropolitan areas are still seeing growth of COVID-19 confirmed cases.  Average daily change is slower in Madison, and Fond du Lac (around 1\% growth), but still moderately high in Green Bay (8.4\%), Janesville-Beloit (8.2\%), Appleton (7.2\%), and Racine (7.1\%).  Some of these areas are seeing increasing growth rates, which may indicate further spread or an increase in the number of tests for COVID-19 being performed.  In terms of the extent of COVID-19, the Green Bay metro area has over 4 cases per thousand residents as of May 3rd, which is by far the highest in Wisconsin.  This comes after several weeks of high growth.  Milwaukee still ranks second-highest in terms of confirmed cases per capita at around 2.4 per thousand but is growing slower than areas like Green Bay, Racine, and Janesville-Beloit.  If trends continue in those areas, Racine and Janesville-Beloit metropolitan areas may surpass Milwaukee in confirmed cases per thousand in the coming weeks.  While the outbreak is still early in Appleton, growth rates are increasing there, and this area should be monitored closely.   -->
 
 <!-- #### Last week (4/22/2020) -->
 
@@ -255,20 +258,33 @@ plot_data_ends <-
   group_by(Name) %>% 
   top_n(1, Date) 
 
-fig1 <- plot_ly(data = plot_data,
-               x = ~Date,
-               y = ~`Average Daily Change (Last 7 Days)`,
-               color = ~metro_name,
-               # symbol = ~str_detect(metro_name, "WI"),
-               text = ~paste0("</br>", metro_name,
-                             "</br>", Date,
-                             "</br>Cases: ", Cases,
-                             "</br>Daily Change: ", scales::percent(daily.change, accuracy = 0.1)),
-               type = "scatter",
-               mode = 'lines+markers',
-               colors = "Paired",
-               alpha = 0.7,
-               hoverinfo = "text") %>% 
+fig1 <- plot_ly(data = filter(plot_data, str_detect(metro_name, "WI")),
+                x = ~Date,
+                y = ~`Average Daily Change (Last 7 Days)`,
+                color = ~metro_name,
+                # symbol = ~str_detect(metro_name, "WI"),
+                text = ~paste0("</br>", metro_name,
+                               "</br>", Date,
+                               "</br>Cases: ", Cases,
+                               "</br>Daily Change: ", scales::percent(daily.change, accuracy = 0.1)),
+                type = "scatter",
+                mode = 'lines+markers',
+                colors = "Paired",
+                alpha = 0.7,
+                hoverinfo = "text") %>% 
+  add_trace(data = filter(plot_data, !str_detect(metro_name, "WI")),
+            x = ~Date,
+            y = ~`Average Daily Change (Last 7 Days)`,
+            color = ~metro_name,
+            text = ~paste0("</br>", metro_name,
+                           "</br>", Date,
+                           "</br>Daily Change: ", scales::percent(daily.change, accuracy = 0.1)),
+            type = "scatter",
+            mode = 'lines+markers',
+            colors = "Paired",
+            alpha = 0.7,
+            hoverinfo = "text",
+            visible = "legendonly") %>% 
   layout(title = "") %>% 
   layout(yaxis = list(title = "Average Daily Change (Last 7 Days)",
                       # range = c(0, 1),
@@ -321,21 +337,33 @@ plot_data_ends <-
   group_by(Name) %>%
   top_n(1, Date) 
 
-fig2 <- plot_ly(data = plot_data,
-               x = ~`Confirmed Cases Per Thousand People`,
-               y = ~`Average Daily Change (Last 7 Days)`,
-               color = ~metro_name,
-               # symbol = ~str_detect(metro_name, "WI"),
-               text = ~paste0("</br>", metro_name,
-                             "</br>", Date,
-                             "</br>Cases Per Thousand: ",
-                             round(`Confirmed Cases Per Thousand People`, 3), 
-                             "</br>Daily Change: ", scales::percent(daily.change, accuracy = 0.1)),
-               type = "scatter",
-               mode = 'lines+markers',
-               colors = "Paired",
-               # alpha = 0.5,
-               hoverinfo = "text") %>% 
+fig2 <- plot_ly(data = filter(plot_data, str_detect(metro_name, "WI")),
+                x = ~`Confirmed Cases Per Thousand People`,
+                y = ~`Average Daily Change (Last 7 Days)`,
+                color = ~metro_name,
+                text = ~paste0("</br>", metro_name,
+                               "</br>", Date,
+                               "</br>Cases Per Thousand: ",
+                               round(`Confirmed Cases Per Thousand People`, 3), 
+                               "</br>Daily Change: ", scales::percent(daily.change, accuracy = 0.1)),
+                type = "scatter",
+                mode = 'lines+markers',
+                colors = "Paired",
+                hoverinfo = "text") %>% 
+  add_trace(data = filter(plot_data, !str_detect(metro_name, "WI")),
+            x = ~`Confirmed Cases Per Thousand People`,
+            y = ~`Average Daily Change (Last 7 Days)`,
+            color = ~metro_name,
+            text = ~paste0("</br>", metro_name,
+                           "</br>", Date,
+                           "</br>Cases Per Thousand: ",
+                           round(`Confirmed Cases Per Thousand People`, 3), 
+                           "</br>Daily Change: ", scales::percent(daily.change, accuracy = 0.1)),
+            type = "scatter",
+            mode = 'lines+markers',
+            colors = "Paired",
+            hoverinfo = "text",
+            visible = "legendonly") %>% 
   layout(title = "") %>% 
   layout(xaxis = list(title = "Confirmed Cases Per Thousand People"),
          yaxis = list(title = "Average Daily Change (Last 7 Days)",
