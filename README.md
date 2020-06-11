@@ -1,6 +1,6 @@
 # COVID-19 in Wisconsin: How Fast It's Growing
 
-The COVID-19 pandemic has impacted nearly everyone across the globe, and it's left many asking "how can I help?".  Our response to that question was to build a dedicated series of visualizations that capture important information about the spread and prevalence of COVID-19 in Wisconsin.  These tools have been used by state officials, health officials&mdash;including leaders at Gundersen and Marshfield Health Systems&mdash;and interested modelers to see which areas .  This effort stems from [AFI DSI COVID-19 Research Group](https://datascience.wisc.edu/covid19/), which has brought together researchers from UW-Madison and beyond to tackle data science issues relating to COVID-19.  
+The COVID-19 pandemic has impacted nearly everyone across the globe, and it's left many asking "how can I help?".  Our response to that question was to build a dedicated series of visualizations that capture important information about the spread and prevalence of COVID-19 in Wisconsin.  These tools have been used by state officials, health officials&mdash;including leaders at Gundersen and Marshfield Health Systems&mdash;and interested modelers to see which areas of Wisconsin are being affected most by COVID-19.  This effort stems from [AFI DSI COVID-19 Research Group](https://datascience.wisc.edu/covid19/), which has brought together researchers from UW-Madison and beyond to tackle data science issues relating to COVID-19.  
 
 ## Growth Rates 
 
