@@ -91,7 +91,7 @@ marshfield <-
 
 ## Daily Growth Rate
 
-To assess the possible future of the outbreak, it’s helpful to look not just at the number of cases but also at how quickly they are increasing. The accompanying chart shows the growth rate of cumulative cases over time, averaged over the previous week.
+To assess the possible future of the outbreak, it's helpful to look not just at the number of cases but also at how quickly they are increasing. The accompanying chart shows the growth rate of cumulative cases over time, averaged over the previous week.
 
 #### Daily growth rate of confirmed cases
 
@@ -596,7 +596,7 @@ fig4
 
 ## Map of Marshfield Clinic Areas
 
-*This plot is interactive*: hover over a metropolitan area to see the exact case counts, population, and per capita measurements. 
+*This plot is interactive*: hover over a region to see the exact case counts, population, and per capita measurements.
 
 #### Confirmed cases per thousand residents
 
@@ -690,22 +690,22 @@ $$
 \textrm{new cases}_t =  \frac{1}{`r window`}\left( \textrm{cases}_t-\textrm{cases}_{t-`r window`}\right)
 $$
 
-## Appendix: Calculating Doubling Time
+<!-- ## Appendix: Calculating Doubling Time -->
 
-Calculate Doubling Time $x$ at time $t$ as
+<!-- Calculate Doubling Time $x$ at time $t$ as -->
 
-$$
-\begin{aligned}
-  \frac{c}{c_0} &= \frac{2^{1/x \times t}}{2^{1/x \times t_0}} \\
-  &= 2^{1/x \times (t-t_0)} \\
-  x &= \frac{(t-t_0)\log_{10}(2)}{\log_{10}(c/c_0)} \\
-  \frac{c}{c_0} &= (\Delta_t+1)^{`r window`} \\
-  x &= \frac{`r window`\log_{10}(2)}{\log_{10}((\Delta_t+1)^{`r window`})} \\
-  &= \frac{\log_{10}(2)}{\log_{10}(\Delta_t+1)} \\
-\end{aligned}
-$$
+<!-- $$ -->
+<!-- \begin{aligned} -->
+<!--   \frac{c}{c_0} &= \frac{2^{1/x \times t}}{2^{1/x \times t_0}} \\ -->
+<!--   &= 2^{1/x \times (t-t_0)} \\ -->
+<!--   x &= \frac{(t-t_0)\log_{10}(2)}{\log_{10}(c/c_0)} \\ -->
+<!--   \frac{c}{c_0} &= (\Delta_t+1)^{`r window`} \\ -->
+<!--   x &= \frac{`r window`\log_{10}(2)}{\log_{10}((\Delta_t+1)^{`r window`})} \\ -->
+<!--   &= \frac{\log_{10}(2)}{\log_{10}(\Delta_t+1)} \\ -->
+<!-- \end{aligned} -->
+<!-- $$ -->
 
-where $c$ is the number of cases at time $t$, $c_0$ is the number of cases at time $t_0=t-`r window`$, and $\Delta_t$ is the average daily change.
+<!-- where $c$ is the number of cases at time $t$, $c_0$ is the number of cases at time $t_0=t-`r window`$, and $\Delta_t$ is the average daily change. -->
 
 <!-- ## Appendix: R Code -->
 

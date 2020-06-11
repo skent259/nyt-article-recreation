@@ -39,6 +39,8 @@ MIN_CASES_TO_PLOT <- 30
 MIN_DATE <- Sys.Date() - 28 # last 4 weeks
 MAX_DATE <- Sys.Date()
 
+window <- 14
+
 color_palette <- c(RColorBrewer::brewer.pal(21, "Paired"), rep("grey50", 20))
 ```
 
@@ -89,7 +91,7 @@ marshfield <-
 
 ## Daily Growth Rate
 
-To assess the possible future of the outbreak, it’s helpful to look not just at the number of cases but also at how quickly they are increasing. The accompanying chart shows the growth rate of cumulative cases over time, averaged over the previous week.
+To assess the possible future of the outbreak, it's helpful to look not just at the number of cases but also at how quickly they are increasing. The accompanying chart shows the growth rate of cumulative cases over time, averaged over the previous week.
 
 #### Daily growth rate of confirmed cases
 
@@ -101,9 +103,11 @@ plot_data <-
   arrange(desc(date)) %>% 
   mutate(cases = cummin(cases)) %>% 
   arrange(date) %>% 
-  mutate(daily.change = (cases / lag(cases, n = 7, default = NA))^(1 / 7) - 1 ) %>% 
+  mutate(daily.change = (cases / lag(cases, n = window, default = NA))^(1 / window) - 1 ) %>% 
   ungroup() %>% 
-  mutate(`Average Daily Change (Last 7 Days)` = daily.change) %>% 
+  mutate(`Average Daily Change` = daily.change,
+         `Doubling Time` = log10(2)/log10(daily.change+1),
+         `Doubling Time` = ifelse(is.infinite(`Doubling Time`), NA, `Doubling Time`)) %>% 
   rename(Name = county.state,
          Date = date,
          Cases = cases) %>% 
@@ -134,11 +138,12 @@ plot_data_bottom_n <-
 fig1 <- 
   plot_ly(data = plot_data_top_10,
           x = ~Date,
-          y = ~`Average Daily Change (Last 7 Days)`,
+          y = ~`Average Daily Change`,
           color = ~Name,
           text = ~paste0("</br>", Name,
                          "</br>", Date,
-                         "</br>Daily Change: ", scales::percent(daily.change, accuracy = 0.1)),
+                         "</br>Daily Change: ", scales::percent(daily.change, accuracy = 0.1),
+                         "</br>Doubling Time: ", round(`Doubling Time`, 3), " days"),
           type = "scatter",
           mode = 'lines+markers',
           colors = "Paired",
@@ -146,16 +151,17 @@ fig1 <-
           hoverinfo = "text") %>% 
   layout(title = "") %>% 
   layout(xaxis = list(title = "Date"),
-         yaxis = list(title = paste0("Average Daily Change (Last 7 Days)"),
+         yaxis = list(title = paste0("Average Daily Change (Last ", window, " Days)"),
                       # range = c(0, 1),
                       tickformat = "%")) %>% 
   add_trace(data = plot_data_bottom_n,
             x = ~Date,
-            y = ~`Average Daily Change (Last 7 Days)`,
+            y = ~`Average Daily Change`,
             color = ~Name,
             text = ~paste0("</br>", Name,
                            "</br>", Date,
-                           "</br>Daily Change: ", scales::percent(daily.change, accuracy = 0.1)),
+                           "</br>Daily Change: ", scales::percent(daily.change, accuracy = 0.1),
+                           "</br>Doubling Time: ", round(`Doubling Time`, 3), " days"),
             type = "scatter",
             mode = 'lines+markers',
             colors = "Paired",
@@ -164,7 +170,7 @@ fig1 <-
             visible = "legendonly") %>% 
   layout(title = "") %>% 
   layout(xaxis = list(title = "Date"),
-         yaxis = list(title = paste0("Average Daily Change (Last 7 Days)"),
+         yaxis = list(title = paste0("Average Daily Change (Last ", window, " Days)"),
                       # range = c(0, 1),
                       tickformat = "%")) %>% 
   config(doubleClickDelay = 500)
@@ -200,10 +206,12 @@ plot_data <-
   arrange(desc(date)) %>% 
   mutate(cases = cummin(cases)) %>% 
   arrange(date) %>% 
-  mutate(daily.change = (cases / lag(cases, n = 7, default = NA))^(1 / 7) - 1 ) %>% 
+  mutate(daily.change = (cases / lag(cases, n = window, default = NA))^(1 / window) - 1 ) %>% 
   ungroup() %>% 
   mutate(`Confirmed Cases Per Thousand People` = cases / population * 1000) %>% 
-  mutate(`Average Daily Change (Last 7 Days)` = daily.change) %>% 
+  mutate(`Average Daily Change` = daily.change,
+         `Doubling Time` = log10(2)/log10(daily.change+1),
+         `Doubling Time` = ifelse(is.infinite(`Doubling Time`), NA, `Doubling Time`)) %>% 
   rename(Name = county.state,
          Date = date,
          Cases = cases) %>% 
@@ -233,13 +241,14 @@ plot_data_bottom_n <-
 
 fig2 <- plot_ly(data = plot_data_top_10,
                x = ~`Confirmed Cases Per Thousand People`,
-               y = ~`Average Daily Change (Last 7 Days)`,
+               y = ~`Average Daily Change`,
                color = ~Name,
                text = ~paste0("</br>", Name,
                              "</br>", Date,
                              "</br>Cases Per Thousand: ", 
                              round(`Confirmed Cases Per Thousand People`, 3), 
-                             "</br>Daily Change: ", scales::percent(daily.change, accuracy = 0.1)),
+                             "</br>Daily Change: ", scales::percent(daily.change, accuracy = 0.1),
+                             "</br>Doubling Time: ", round(`Doubling Time`, 3), " days"),
                type = "scatter",
                mode = 'lines+markers',
                colors = "Paired",
@@ -247,18 +256,19 @@ fig2 <- plot_ly(data = plot_data_top_10,
                hoverinfo = "text") %>% 
   layout(title = "") %>% 
   layout(xaxis = list(title = "Confirmed Cases Per Thousand People"),
-         yaxis = list(title = paste0("Average Daily Change (Last 7 Days)"),
+         yaxis = list(title = paste0("Average Daily Change (Last ", window, " Days)"),
                       # range = c(0, 1),
                       tickformat = "%")) %>% 
   add_trace(data = plot_data_bottom_n,
             x = ~`Confirmed Cases Per Thousand People`,
-            y = ~`Average Daily Change (Last 7 Days)`,
+            y = ~`Average Daily Change`,
             color = ~Name,
             text = ~paste0("</br>", Name,
                            "</br>", Date,
                            "</br>Cases Per Thousand: ", 
                            round(`Confirmed Cases Per Thousand People`, 3), 
-                           "</br>Daily Change: ", scales::percent(daily.change, accuracy = 0.1)),
+                           "</br>Daily Change: ", scales::percent(daily.change, accuracy = 0.1),
+                           "</br>Doubling Time: ", round(`Doubling Time`, 3), " days"),
             type = "scatter",
             mode = 'lines+markers',
             colors = "Paired",
@@ -267,7 +277,7 @@ fig2 <- plot_ly(data = plot_data_top_10,
             visible = "legendonly") %>% 
   layout(title = "") %>% 
   layout(xaxis = list(title = "Confirmed Cases Per Thousand People"),
-         yaxis = list(title = paste0("Average Daily Change (Last 7 Days)"),
+         yaxis = list(title = paste0("Average Daily Change (Last ", window, " Days)"),
                       # range = c(0, 1),
                       tickformat = "%")) %>% 
   config(doubleClickDelay = 500)
@@ -279,6 +289,8 @@ fig2
 **Pros of this measure**: Helps distinguish between places where cases are growing fast with few cases and places where cases are numerous and still growing fast.
 
 **Cons**: Hard to read at first. Relies on case data.
+
+
 
 ## New Cases by Case Count
 
@@ -297,15 +309,15 @@ plot_data <-
   arrange(date) %>% 
   mutate(new.cases = cases - lag(cases, 
                                  default = cases[1]),
-         # new.cases = ifelse(new.cases < 0, 0, new.cases),
+         new.cases = ifelse(new.cases < 0, 0, new.cases),
          roll.cases = rollapply(new.cases, 
-                                list(-(0:6)), 
+                                list(-(0:(window-1))), 
                                 sum, 
                                 fill = NA, 
                                 align = "right", 
                                 partial = FALSE)) %>% 
   ungroup() %>% 
-  mutate(`New Cases (Daily Average over Last 7 Days)` = roll.cases) %>% 
+  mutate(`New Cases` = roll.cases) %>% 
   rename(Name = county.state,
          Date = date,
          Cases = cases) %>% 
@@ -313,18 +325,18 @@ plot_data <-
 
 fig3 <- plot_ly(data = plot_data,
                x = ~Cases,
-               y = ~`New Cases (Daily Average over Last 7 Days)`,
+               y = ~`New Cases`,
                color = ~Name,
                text = ~paste0("</br>", Name,
                              "</br>", Date,
                              "</br>Cases: ", Cases, 
-                             "</br>New Cases (Daily Average over Last 7 Days): ", `New Cases (Daily Average over Last 7 Days)`),
+                             "</br>New Cases (Daily Average over Last ", window, " Days): ", `New Cases`),
                type = "scatter",
                mode = 'lines+markers',
                colors = "Paired",
                # alpha = 0.5,
                hoverinfo = "text") %>% 
-  layout(yaxis = list(title = "New Cases (Daily Average over Last 7 Days)")) %>% 
+  layout(yaxis = list(title = paste0("New Cases (Daily Average over Last ", window, " Days)"))) %>% 
   config(doubleClickDelay = 500)
 
 fig3
@@ -352,15 +364,15 @@ plot_data <-
   arrange(date) %>% 
   mutate(new.cases = cases - lag(cases, 
                                  default = cases[1]),
-         # new.cases = ifelse(new.cases < 0, 0, new.cases),
+         new.cases = ifelse(new.cases < 0, 0, new.cases),
          roll.cases = rollapply(new.cases, 
-                                list(-(0:6)), 
+                                list(-(0:(window-1))), 
                                 sum, 
                                 fill = NA, 
                                 align = "right", 
                                 partial = FALSE)) %>% 
   ungroup() %>% 
-  mutate(`New Cases Per Thousand People (Daily Average over Last 7 Days)` = round(roll.cases / population * 1000, 3)) %>% 
+  mutate(`New Cases Per Thousand People` = round(roll.cases / population * 1000, 3)) %>% 
   mutate(`Cases Per Thousand People` = round(cases / population * 1000, 3)) %>% 
   rename(Name = county.state,
          Date = date,
@@ -369,19 +381,19 @@ plot_data <-
 
 fig4 <- plot_ly(data = plot_data,
                x = ~`Cases Per Thousand People`,
-               y = ~`New Cases Per Thousand People (Daily Average over Last 7 Days)`,
+               y = ~`New Cases Per Thousand People`,
                color = ~Name,
                text = ~paste0("</br>", Name,
                              "</br>", Date,
                              "</br>Cases Per Thousand: ", `Cases Per Thousand People`, 
-                             "</br>New Cases Per Thousand </br>(Daily Average over Last 7 Days): ", `New Cases Per Thousand People (Daily Average over Last 7 Days)`),
+                             "</br>New Cases Per Thousand </br>(Daily Average over Last ", window, " Days): ", `New Cases Per Thousand People`),
                type = "scatter",
                mode = 'lines+markers',
                colors = "Paired",
                # alpha = 0.5,
                hoverinfo = "text") %>% 
   layout(xaxis = list(title = "Cases Per Thousand People"),
-         yaxis = list(title = "New Cases Per Thousand People (Daily Average over Last 7 Days)")) %>% 
+         yaxis = list(title = paste0("New Cases Per Thousand People (Daily Average over Last ", window, " Days)"))) %>% 
   config(doubleClickDelay = 500)
 
 fig4
@@ -561,7 +573,7 @@ fig4
 
 ## Map of Marshfield Clinic Areas
 
-*This plot is interactive*: hover over a metropolitan area to see the exact case counts, population, and per capita measurements. 
+*This plot is interactive*: hover over a region to see the exact case counts, population, and per capita measurements.
 
 #### Confirmed cases per thousand residents
 
@@ -641,21 +653,36 @@ United States Census Bureau, County Population Totals: 2010-2019. 2019. Retrieve
 
 ## Appendix: Calculating Average Daily Change
 
-Calculate "Average Daily Change in Total Cases, Over the Previous 7 Days" at time $t$ as
+Calculate "Average Daily Change in Total Cases, Over the Previous `r window` Days" at time $t$ as
 
 $$
-\textrm{avg daily change}_t =  \left( \frac{\textrm{cases}_t}{\textrm{cases}_{t-7}} \right)^{(1/7)} - 1 
+\textrm{avg daily change}_t =  \left( \frac{\textrm{cases}_t}{\textrm{cases}_{t-`r window`}} \right)^{(1/`r window`)} - 1 
 $$
 
-## Appendix: Calculating New Cases (Daily Average over Last 7 Days)
+## Appendix: Calculating New Cases (Daily Average over Last `r window` Days)
 
-Calculate "New Cases (Daily Average over Last 7 Days)" at time $t$ as
+Calculate "New Cases (Daily Average over Last `r window` Days)" at time $t$ as
 
 $$
-\textrm{new cases}_t =  \frac{1}{7}\left( \textrm{cases}_t-\textrm{cases}_{t-7}\right)
+\textrm{new cases}_t =  \frac{1}{`r window`}\left( \textrm{cases}_t-\textrm{cases}_{t-`r window`}\right)
 $$
 
+<!-- ## Appendix: Calculating Doubling Time -->
 
+<!-- Calculate Doubling Time $x$ at time $t$ as -->
+
+<!-- $$ -->
+<!-- \begin{aligned} -->
+<!--   \frac{c}{c_0} &= \frac{2^{1/x \times t}}{2^{1/x \times t_0}} \\ -->
+<!--   &= 2^{1/x \times (t-t_0)} \\ -->
+<!--   x &= \frac{(t-t_0)\log_{10}(2)}{\log_{10}(c/c_0)} \\ -->
+<!--   \frac{c}{c_0} &= (\Delta_t+1)^{`r window`} \\ -->
+<!--   x &= \frac{`r window`\log_{10}(2)}{\log_{10}((\Delta_t+1)^{`r window`})} \\ -->
+<!--   &= \frac{\log_{10}(2)}{\log_{10}(\Delta_t+1)} \\ -->
+<!-- \end{aligned} -->
+<!-- $$ -->
+
+<!-- where $c$ is the number of cases at time $t$, $c_0$ is the number of cases at time $t_0=t-`r window`$, and $\Delta_t$ is the average daily change. -->
 
 <!-- ## Appendix: R Code -->
 

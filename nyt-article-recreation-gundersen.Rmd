@@ -103,7 +103,7 @@ gundersen <-
 
 ## Daily Growth Rate
 
-To assess the possible future of the outbreak, it’s helpful to look not just at the number of cases but also at how quickly they are increasing. The accompanying chart shows the growth rate of cumulative cases over time, averaged over the previous week.
+To assess the possible future of the outbreak, it's helpful to look not just at the number of cases but also at how quickly they are increasing. The accompanying chart shows the growth rate of cumulative cases over time, averaged over the previous week.
 
 #### Daily growth rate of confirmed cases
 
@@ -575,7 +575,7 @@ fig4
 
 ## Map of Gundersen Clinic Areas and Adjacent Counties
 
-*This plot is interactive*: hover over a metropolitan area to see the exact case counts, population, and per capita measurements. 
+*This plot is interactive*: hover over a region to see the exact case counts, population, and per capita measurements.
 
 #### Confirmed cases per thousand residents
 
