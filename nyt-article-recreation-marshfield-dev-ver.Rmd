@@ -353,13 +353,13 @@ fig3 <- plot_ly(data = plot_data,
                text = ~paste0("</br>", Name,
                              "</br>", Date,
                              "</br>Cases: ", Cases, 
-                             "</br>New Cases (over Last ", window, " Days): ", `New Cases`),
+                             "</br>New Cases (Last ", window, " Days): ", `New Cases`),
                type = "scatter",
                mode = 'lines+markers',
                colors = "Paired",
                # alpha = 0.5,
                hoverinfo = "text") %>% 
-  layout(yaxis = list(title = paste0("New Cases (over Last ", window, " Days)"))) %>% 
+  layout(yaxis = list(title = paste0("New Cases (Last ", window, " Days)"))) %>% 
   config(doubleClickDelay = 500)
 
 fig3
@@ -409,14 +409,14 @@ fig4 <- plot_ly(data = plot_data,
                text = ~paste0("</br>", Name,
                              "</br>", Date,
                              "</br>Cases Per Thousand: ", `Cases Per Thousand People`, 
-                             "</br>New Cases Per Thousand </br>(over Last ", window, " Days): ", `New Cases Per Thousand People`),
+                             "</br>New Cases Per Thousand </br>(Last ", window, " Days): ", `New Cases Per Thousand People`),
                type = "scatter",
                mode = 'lines+markers',
                colors = "Paired",
                # alpha = 0.5,
                hoverinfo = "text") %>% 
   layout(xaxis = list(title = "Cases Per Thousand People"),
-         yaxis = list(title = paste0("New Cases Per Thousand People (over Last ", window, " Days)"))) %>% 
+         yaxis = list(title = paste0("New Cases Per Thousand People (Last ", window, " Days)"))) %>% 
   config(doubleClickDelay = 500)
 
 fig4
@@ -445,7 +445,7 @@ fig4
 <!--                                 align = "right",  -->
 <!--                                 partial = FALSE)) %>%  -->
 <!--   ungroup() %>%  -->
-<!--   mutate(`New Cases Per Thousand People (over Last 7 Days)` = round(roll.cases / population * 1000, 3)) %>%  -->
+<!--   mutate(`New Cases Per Thousand People (Last 7 Days)` = round(roll.cases / population * 1000, 3)) %>%  -->
 <!--   rename(Name = county.state, -->
 <!--          Date = date, -->
 <!--          Cases = cases) %>%  -->
@@ -453,12 +453,12 @@ fig4
 
 <!-- fig5 <- plot_ly(data = plot_data, -->
 <!--                x = ~Cases, -->
-<!--                y = ~`New Cases Per Thousand People (over Last 7 Days)`, -->
+<!--                y = ~`New Cases Per Thousand People (Last 7 Days)`, -->
 <!--                color = ~Name, -->
 <!--                text = ~paste0("</br>", Name, -->
 <!--                              "</br>", Date, -->
 <!--                              "</br>Cases: ", Cases,  -->
-<!--                              "</br>New Cases Per Thousand </br>(over Last 7 Days): ", `New Cases Per Thousand People (over Last 7 Days)`), -->
+<!--                              "</br>New Cases Per Thousand </br>(Last 7 Days): ", `New Cases Per Thousand People (Last 7 Days)`), -->
 <!--                type = "scatter", -->
 <!--                mode = 'lines+markers', -->
 <!--                colors = "Paired", -->
@@ -486,7 +486,7 @@ fig4
 <!--                                 align = "right",  -->
 <!--                                 partial = FALSE)) %>%  -->
 <!--   ungroup() %>%  -->
-<!--   mutate(`New Cases (over Last 7 Days)` = roll.cases) %>%  -->
+<!--   mutate(`New Cases (Last 7 Days)` = roll.cases) %>%  -->
 <!--   rename(Name = county.state, -->
 <!--          Date = date, -->
 <!--          Cases = cases) %>%  -->
@@ -494,12 +494,12 @@ fig4
 
 <!-- fig6 <- plot_ly(data = plot_data, -->
 <!--                x = ~Date, -->
-<!--                y = ~`New Cases (over Last 7 Days)`, -->
+<!--                y = ~`New Cases (Last 7 Days)`, -->
 <!--                color = ~Name, -->
 <!--                text = ~paste0("</br>", Name, -->
 <!--                              "</br>", Date, -->
 <!--                              "</br>Cases: ", Cases,  -->
-<!--                              "</br>New Cases (over Last 7 Days): ", `New Cases (over Last 7 Days)`), -->
+<!--                              "</br>New Cases (Last 7 Days): ", `New Cases (Last 7 Days)`), -->
 <!--                type = "scatter", -->
 <!--                mode = 'lines+markers', -->
 <!--                colors = "Paired", -->
@@ -527,7 +527,7 @@ fig4
 <!--                                 align = "right",  -->
 <!--                                 partial = FALSE)) %>%  -->
 <!--   ungroup() %>%  -->
-<!--   mutate(`New Cases Per Thousand People (over Last 7 Days)` = round(roll.cases / population * 1000, 3)) %>%  -->
+<!--   mutate(`New Cases Per Thousand People (Last 7 Days)` = round(roll.cases / population * 1000, 3)) %>%  -->
 <!--   rename(Name = county.state, -->
 <!--          Date = date, -->
 <!--          Cases = cases) %>%  -->
@@ -535,12 +535,12 @@ fig4
 
 <!-- fig7 <- plot_ly(data = plot_data, -->
 <!--                x = ~Date, -->
-<!--                y = ~`New Cases Per Thousand People (over Last 7 Days)`, -->
+<!--                y = ~`New Cases Per Thousand People (Last 7 Days)`, -->
 <!--                color = ~Name, -->
 <!--                text = ~paste0("</br>", Name, -->
 <!--                              "</br>", Date, -->
 <!--                              "</br>Cases: ", Cases,  -->
-<!--                              "</br>New Cases Per Thousand </br>(over Last 7 Days): ", `New Cases Per Thousand People (over Last 7 Days)`), -->
+<!--                              "</br>New Cases Per Thousand </br>(Last 7 Days): ", `New Cases Per Thousand People (Last 7 Days)`), -->
 <!--                type = "scatter", -->
 <!--                mode = 'lines+markers', -->
 <!--                colors = "Paired", -->
@@ -568,7 +568,7 @@ fig4
 <!--                                 align = "right",  -->
 <!--                                 partial = FALSE)) %>%  -->
 <!--   ungroup() %>%  -->
-<!--   mutate(`New Cases (over Last 7 Days)` = roll.cases) %>%  -->
+<!--   mutate(`New Cases (Last 7 Days)` = roll.cases) %>%  -->
 <!--   mutate(`Cases Per Thousand People` = round(cases / population * 1000, 3)) %>%  -->
 <!--   rename(Name = county.state, -->
 <!--          Date = date, -->
@@ -577,12 +577,12 @@ fig4
 
 <!-- fig8 <- plot_ly(data = plot_data, -->
 <!--                x = ~`Cases Per Thousand People`, -->
-<!--                y = ~`New Cases (over Last 7 Days)`, -->
+<!--                y = ~`New Cases (Last 7 Days)`, -->
 <!--                color = ~Name, -->
 <!--                text = ~paste0("</br>", Name, -->
 <!--                              "</br>", Date, -->
 <!--                              "</br>Cases Per Thousand: ", `Cases Per Thousand People`,  -->
-<!--                              "</br>New Cases (over Last 7 Days): ", `New Cases (over Last 7 Days)`), -->
+<!--                              "</br>New Cases (Last 7 Days): ", `New Cases (Last 7 Days)`), -->
 <!--                type = "scatter", -->
 <!--                mode = 'lines+markers', -->
 <!--                colors = "Paired", -->
@@ -682,9 +682,9 @@ $$
 \textrm{avg daily change}_t =  \left( \frac{\textrm{cases}_t}{\textrm{cases}_{t-`r window`}} \right)^{(1/`r window`)} - 1 
 $$
 
-## Appendix: Calculating New Cases (over Last `r window` Days)
+## Appendix: Calculating New Cases (Last `r window` Days)
 
-Calculate "New Cases (over Last `r window` Days)" at time $t$ as
+Calculate "New Cases (Last `r window` Days)" at time $t$ as
 
 $$
 \textrm{new cases}_t = \left(\textrm{cases}_t-\textrm{cases}_{t-`r window`}\right)
