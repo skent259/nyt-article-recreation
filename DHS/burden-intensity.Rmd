@@ -1,0 +1,263 @@
+---
+title: "Coronavirus Burden and Intensity Across Wisconsin"
+# author: "Srikanth Aravamuthan & Sean Kent"
+date: "Updated `r format(Sys.time(), '%B %d, %Y, %I:00 %p %Z')`"
+output: 
+  html_document:
+    code_folding: hide
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = FALSE,
+  # cache = TRUE, 
+  message = FALSE,
+  warning = FALSE, 
+  fig.width = 10
+)
+
+library(tidyverse)
+library(purrr)
+library(lubridate)
+library(zoo)
+library(readxl)
+library(here)
+# library(maps)
+# library(sf)
+library(plotly)
+# library(shiny)
+
+# library(maptools)
+# library(rgeos)
+
+```
+
+
+
+```{r data choices}
+## Data choices
+MIN_CASES_TO_PLOT <- 30
+MIN_DATE <- Sys.Date() - 28 # last 4 weeks
+MAX_DATE <- Sys.Date()
+
+# color_palette <- c(RColorBrewer::brewer.pal(21, "Paired"), rep("grey50", 20))
+```
+
+
+
+```{r nyt-data}
+# Data from the New York Times repository
+us_counties <- read_csv("https://raw.githubusercontent.com/nytimes/covid-19-data/master/us-counties.csv")
+us_states <- read_csv("https://raw.githubusercontent.com/nytimes/covid-19-data/master/us-states.csv")
+
+# NYT does this annoying thing where they count ("Kings", "Queens", "New York", "Bronx") counties 
+# as the 'county' New York City.  Attempt to fix by removing putting all of the cases/deaths in 
+# New York county, since we are aggregating by metro area anyways
+us_counties[us_counties$county == "New York City", "county"] <- "New York"
+
+```
+
+
+
+```{r population-data}
+## Population data from US census 2019 estimates
+county_population <- 
+  read_csv("https://www2.census.gov/programs-surveys/popest/datasets/2010-2019/counties/totals/co-est2019-alldata.csv") %>% 
+  filter(SUMLEV == "050") %>% 
+  mutate(CTYNAME = str_remove(CTYNAME, " County"),
+         CTYNAME = str_remove(CTYNAME, " Parish")) %>% 
+  rename(state = STNAME,
+         county = CTYNAME,
+         population = POPESTIMATE2019) %>% 
+  select(state, county, population)
+
+```
+
+
+
+```{r}
+
+wi_dph_regions  <- 
+  read_csv(here("DHS/wi_dph_regions.csv")) %>% 
+  select(county, dph_region,  herc_region)
+
+
+wi_counties <- 
+  us_counties %>% 
+  filter(county %in% wi_dph_regions$county & state == "Wisconsin") %>% 
+  left_join(wi_dph_regions, by = "county") %>% 
+  left_join(county_population, by = c("county", "state"))
+
+```
+
+
+```{r}
+wi_regions <- 
+  wi_counties %>% 
+  group_by(date, herc_region) %>% 
+  summarize(state = unique(state),
+            cases = sum(cases),
+            deaths = sum(deaths),
+            population = sum(population)) %>% 
+  ungroup()
+```
+
+
+
+The following is a *very* rough draft of visualizations to track the burden and intensity of HERC regions in Wisconsin. 
+
+
+## Burden vs Intensity
+
+
+```{r}
+
+process_data <- function(data, group_var) {
+  group_var <- enquo(group_var)
+  
+  data %>% 
+    ungroup() %>% 
+    group_by(!! group_var) %>% 
+    arrange(desc(date)) %>% 
+    mutate(cases = cummin(cases)) %>% 
+    arrange(date) %>% 
+    mutate(new.cases = cases - lag(cases, default = 0)) %>% 
+    mutate(cases.per.7days = rollapply(new.cases, 
+                                       list(-(0:6)), 
+                                       sum, 
+                                       fill = NA,
+                                       align = "right", 
+                                       partial = FALSE)) %>% 
+    mutate(cases.per.14days = rollapply(new.cases, 
+                                        list(-(0:13)), 
+                                        sum, 
+                                        fill = NA,
+                                        align = "right", 
+                                        partial = FALSE)) %>% 
+    mutate(cases.per.14days.per.100k = cases.per.14days / (population/100000)) %>% 
+    mutate(row = row_number()) %>% 
+    filter(between(date, MIN_DATE, MAX_DATE))
+    
+  # TODO: add select to narrow down the variables kept
+}
+
+# process_data(wi_regions, group_var = herc_region)
+# process_data(wi_counties, group_var = county) 
+
+```
+
+
+
+### HERC Regions Across Wisconsin (Last 4 weeks)
+
+
+```{r}
+fig1 <- 
+    plot_ly(data = process_data(wi_regions, group_var = herc_region),
+            x = ~cases.per.14days.per.100k,
+            y = ~cases.per.7days,
+            color = ~herc_region,
+            # size = ~row, 
+            # color = I("black"),
+            colors = "Dark2", 
+            text = ~paste0("</br>", herc_region,
+                           "</br>", date,
+                           "</br>New Cases (last 7 days): ", cases.per.7days,
+                           "</br>New Cases per 100k (last 14 days): ", round(cases.per.14days.per.100k, 1)),
+            type = "scatter",
+            mode = 'lines+markers',
+            hoverinfo = "text") %>% 
+    layout(title = list(text = "",
+                        y = 1,
+                        x = 0.1,
+                        xanchor = "left")) %>% 
+    layout(xaxis = list(title = "Burden: New Cases per 100k (last 14 days)"),
+           yaxis = list(title = "Intensity: New Cases (last 7 days)")) %>% 
+    config(doubleClickDelay = 500)
+  
+fig1
+  
+```
+
+
+### Individual Regions (Last 4 Weeks)
+
+```{r}
+# region = "South Central"
+l <- htmltools::tagList()
+
+regions <- unique(wi_dph_regions$herc_region)
+for (i in 1:length(regions)) {
+  fig2 <- 
+    plot_ly(data = process_data(wi_regions, group_var = herc_region) %>% 
+              filter(herc_region == regions[i]),
+            x = ~cases.per.14days.per.100k,
+            y = ~cases.per.7days,
+            # size = ~row, 
+            name = regions[i],
+            color = I("black"),
+            text = ~paste0("</br>", herc_region,
+                           "</br>", date,
+                           "</br>New Cases (last 7 days): ", cases.per.7days,
+                           "</br>New Cases per 100k (last 14 days): ", round(cases.per.14days.per.100k, 1)),
+            type = "scatter",
+            mode = 'lines+markers',
+            hoverinfo = "text") 
+  
+  fig2 <- add_trace(fig2, 
+                    data = process_data(wi_counties, group_var = county) %>% 
+                      filter(herc_region == regions[i]),
+                    inherit = FALSE,
+                    x = ~cases.per.14days.per.100k,
+                    y = ~cases.per.7days,
+                    color = ~county,
+                    text = ~paste0("</br>", county,
+                                   "</br>", date,
+                                   "</br>New Cases (last 7 days): ", cases.per.7days,
+                                   "</br>New Cases per 100k (last 14 days): ", round(cases.per.14days.per.100k, 1)),
+                    type = "scatter",
+                    mode = 'lines+markers',
+                    colors = "Paired",
+                    alpha = 0.7,
+                    hoverinfo = "text"
+  )
+  
+  # formatting 
+  fig2 <- fig2 %>% 
+    layout(title = list(text = paste0(regions[i], " Region"),
+                        y = 1,
+                        x = 0.1,
+                        xanchor = "left")) %>% 
+    layout(xaxis = list(title = "Burden: New Cases per 100k (last 14 days)"),
+           yaxis = list(title = "Intensity: New Cases (last 7 days)")) %>% 
+    config(doubleClickDelay = 500)
+  
+  l[[i]] <- as_widget(fig2)
+  
+}
+
+l
+
+
+```
+
+
+*These plots are interactive*: Double click on a region in the legend to start a comparison and then single click on others to add or remove them from the comparison.  Note: double-clicking may not work well on all platforms, but you may single click on a region in the legend to remove from the comparison.  
+
+
+
+
+## Sources
+
+New York Times. New York Times database of U.S. coronavirus cases. 2020. Retrieved from <https://github.com/nytimes/covid-19-data>.
+
+United States Census Bureau, County Population Totals: 2010-2019. 2019. Retrieved from <https://www.census.gov/data/tables/time-series/demo/popest/2010s-counties-total.html>.
+
+United States Census Bureau, County Adjacency File. 2010. Retrieved from <https://www.census.gov/geographies/reference-files/2010/geo/county-adjacency.html>.
+
+
+
+<!-- ## Appendix: R Code -->
+
+```{r appendix, ref.label=knitr::all_labels(),echo=TRUE,eval=FALSE}
+```
