@@ -5,8 +5,8 @@ account: spkent
 server: data-viz.it.wisc.edu
 hostUrl: https://data-viz.it.wisc.edu/__api__
 appId: 30
-bundleId: 94
+bundleId: 167
 url: https://data-viz.it.wisc.edu/wi-metro-growth-gundersen/
-when: 1588196695.7411
+when: 1591998442.49013
 asMultiple: FALSE
 asStatic: FALSE
