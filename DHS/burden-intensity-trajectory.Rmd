@@ -1,0 +1,788 @@
+---
+title: "Burden, Intensity, Trajectory of Coronavirus in Wisconsin"
+subtitle: "by Healthcare Emergency Readiness Coalition (HERC) Regions"
+# author: "Srikanth Aravamuthan & Sean Kent"
+date: "Updated `r format(Sys.time(), '%B %d, %Y, %I:00 %p %Z')`"
+output: 
+  html_document:
+    code_folding: hide
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = FALSE,
+  # cache = TRUE, 
+  message = FALSE,
+  warning = FALSE, 
+  fig.width = 10
+)
+
+library(tidyverse)
+# library(purrr)
+library(lubridate)
+library(readxl)
+# library(maps)
+# library(sf)
+library(plotly)
+# library(shiny)
+
+# library(maptools)
+# library(rgeos)
+
+```
+
+
+
+```{r data choices}
+## Data choices
+MIN_CASES_TO_PLOT <- 30
+MIN_DATE <- Sys.Date() - 28 # last 4 weeks
+MAX_DATE <- Sys.Date()
+
+# color_palette <- c(RColorBrewer::brewer.pal(21, "Paired"), rep("grey50", 20))
+```
+
+
+
+```{r nyt-data}
+# Data from the New York Times repository
+us_counties <- read_csv("https://raw.githubusercontent.com/nytimes/covid-19-data/master/us-counties.csv")
+us_states <- read_csv("https://raw.githubusercontent.com/nytimes/covid-19-data/master/us-states.csv")
+
+# NYT does this annoying thing where they count ("Kings", "Queens", "New York", "Bronx") counties 
+# as the 'county' New York City.  Attempt to fix by removing putting all of the cases/deaths in 
+# New York county, since we are aggregating by metro area anyways
+us_counties[us_counties$county == "New York City", "county"] <- "New York"
+
+```
+
+
+
+```{r population-data}
+## Population data from US census 2019 estimates
+county_population <- 
+  read_csv("https://www2.census.gov/programs-surveys/popest/datasets/2010-2019/counties/totals/co-est2019-alldata.csv") %>% 
+  filter(SUMLEV == "050") %>% 
+  mutate(CTYNAME = str_remove(CTYNAME, " County"),
+         CTYNAME = str_remove(CTYNAME, " Parish")) %>% 
+  rename(state = STNAME,
+         county = CTYNAME,
+         population = POPESTIMATE2018) %>% 
+  select(state, county, population)
+
+```
+
+
+
+```{r}
+wi_counties <- 
+  read_csv("wi_dph_regions.csv") %>% 
+  # select(-dph_region) %>% 
+  rename(
+    population = pop_2018
+    # ,
+    # region = herc_region
+  ) %>% 
+  mutate(fips = as.character(fips)) %>% 
+  select(-county) %>%
+  left_join(us_counties, by = "fips")
+
+wi_regions <- 
+  wi_counties %>% 
+  group_by(date, herc_region) %>% 
+  summarize(state = unique(state),
+            cases = sum(cases, na.rm = TRUE),
+            deaths = sum(deaths, na.rm = TRUE),
+            population = sum(population, na.rm = TRUE)) %>% 
+  ungroup()
+
+```
+
+
+
+```{r}
+process_data <- function(data, group_var) {
+  group_var <- enquo(group_var)
+  
+  data %>% 
+    group_by(!!group_var) %>% 
+    arrange(desc(date)) %>% 
+    mutate(cases = cummin(cases)) %>% 
+    arrange(date) %>% 
+    mutate(new.cases = cases - lag(cases, default = 0)) %>% 
+    mutate(intensity = cases - lag(cases, n = 7, default = 0)) %>% 
+    mutate(trajectory = (cases - lag(cases, n = 7, default = 0)) / ((lag(cases, n = 7, default = 0) - lag(cases, n = 14, default = 0))) - 1) %>% 
+    mutate(burden = (cases - lag(cases, n = 14, default = 0)) / (population/100000)) %>% 
+    mutate(row = row_number()) %>% 
+    ungroup() %>% 
+    filter(between(date, MIN_DATE, MAX_DATE))
+    
+  # TODO: add select to narrow down the variables kept
+}
+
+# process_data(wi_regions, group_var = herc_region)
+# process_data(wi_counties, group_var = county) 
+
+```
+
+# {.tabset .tabset-pills}
+
+___Work in Progress___: The following is a preliminary set of visualizations to track the burden, intensity, and trajectory of Healthcare Emergency Readiness Coalition (HERC) regions in Wisconsin. 
+
+## Burden versus Intensity {.tabset .tabset-pills}
+
+### HERC Regions Across Wisconsin (Last 4 Weeks)
+
+```{r}
+df <- process_data(wi_regions, group_var = herc_region)
+
+fig1 <- 
+  plot_ly(data = df,
+          x = ~burden,
+          y = ~intensity,
+          color = ~herc_region,
+          colors = "Spectral",
+          alpha = 0.7,
+          text = ~paste0("</br>", herc_region,
+                         "</br>", format(date, "%B %d, %Y"),
+                         "</br>New Cases (last 7 days): ", intensity,
+                         "</br>New Cases per 100k (last 14 days): ",
+                         round(burden, 1)),
+          type = "scatter",
+          mode = 'lines+markers',
+          hoverinfo = "text",
+          legendgroup = ~herc_region) %>% 
+  add_trace(data = df %>% 
+              filter(date == max(date)),
+            color = ~herc_region,
+            colors = "Spectral",
+            size = I(70),
+            stroke = I("black"),
+            symbol = I(24),
+            type = "scatter",
+            mode = "markers",
+            showlegend = FALSE) %>% 
+  add_trace(data = df %>% 
+              filter(date == max(date)-7),
+            color = ~herc_region,
+            colors = "Spectral",
+            size = I(50),
+            stroke = I("black"),
+            symbol = I(24),
+            type = "scatter",
+            mode = "markers",
+            showlegend = FALSE) %>% 
+  add_trace(x = Inf, y = Inf,
+            color = I("#377ab5"),
+            symbol = I(24),
+            stroke = I("black"),
+            size = I(70),
+            mode = "markers",
+            name = "Today",
+            legendgroup = "note") %>% 
+  add_trace(x = Inf, y = Inf,
+            color = I("#377ab5"),
+            symbol = I(24),
+            stroke = I("black"),
+            size = I(50),
+            mode = "markers",
+            name = "7 Days Ago",
+            legendgroup = "note") %>% 
+  layout(title = list(text = "",
+                      y = 1,
+                      x = 0.1,
+                      xanchor = "left")) %>% 
+  layout(xaxis = list(title = "Burden: New Cases per 100k (last 14 days)"),
+         yaxis = list(title = "Intensity: New Cases (last 7 days)")) %>% 
+  layout(updatemenus = 
+           list(
+             list(
+               type = "buttons",
+               direction = "right",
+               xanchor = "center",
+               yanchor = "top",
+               showactive = FALSE,
+               x = 1.1,
+               y = 0,
+               buttons = list(
+                 list(method = "restyle",
+                      args = list("visible", "all"),
+                      label = "show all"),
+                 list(method = "restyle",
+                      args = list("visible", "legendonly"),
+                      label = "hide all")
+               )
+             )
+           )
+         ) %>% 
+  config(doubleClickDelay = 500) %>%
+  config(displaylogo = FALSE)
+
+fig1
+  
+```
+
+### Individual Regions (Last 4 Weeks) {.tabset .tabset-pills}
+
+```{r}
+# region = "South Central"
+l <- htmltools::tagList()
+
+regions <- 
+  wi_counties %>% 
+  select(herc_region) %>% 
+  distinct() %>% 
+  pull()
+
+df.1 <- 
+  process_data(wi_regions, group_var = herc_region) %>% 
+  mutate(county = herc_region) %>% 
+  select(date, county, state, herc_region, cases, deaths, population, new.cases, intensity, trajectory, burden)
+
+df.2 <- 
+  process_data(wi_counties, group_var = county) %>% 
+  select(date, county, state, herc_region, cases, deaths, population, new.cases, intensity, trajectory, burden)
+
+df <- 
+  df.1 %>% 
+  bind_rows(df.2)
+
+for(i in 1:length(regions)) {
+  fig2 <- 
+    plot_ly(data = df %>% 
+              filter(county == regions[i]),
+            x = ~burden,
+            y = ~intensity,
+            name = regions[i],
+            color = I("#377ab5"),
+            text = ~paste0("</br>", county,
+                           "</br>", format(date, "%B %d, %Y"),
+                           "</br>New Cases (last 7 days): ", intensity,
+                           "</br>New Cases per 100k (last 14 days): ",
+                           round(burden, 1)),
+            type = "scatter",
+            mode = 'lines+markers',
+            hoverinfo = "text",
+            legendgroup = ~county) %>% 
+    add_trace(data = df %>% 
+                filter(herc_region == regions[i],
+                       county != regions[i]),
+              inherit = FALSE,
+              x = ~burden,
+              y = ~intensity,
+              color = ~county,
+              colors = "Paired",
+              alpha = 0.7,
+              text = ~paste0("</br>", county,
+                             "</br>", format(date, "%B %d, %Y"),
+                             "</br>New Cases (last 7 days): ", intensity,
+                             "</br>New Cases per 100k (last 14 days): ",
+                             round(burden, 1)),
+              type = "scatter",
+              mode = 'lines+markers',
+              hoverinfo = "text",
+              legendgroup = ~county) %>% 
+    add_trace(data = df %>% 
+                filter(date == max(date),
+                       county == regions[i]),
+              name = regions[i],
+              color = I("#377ab5"),
+              size = I(70),
+              stroke = I("black"),
+              symbol = I(24),
+              type = "scatter",
+              mode = "markers",
+              showlegend = FALSE) %>% 
+    add_trace(data = df %>% 
+                filter(date == max(date)-7,
+                       county == regions[i]),
+              name = regions[i],
+              color = I("#377ab5"),
+              size = I(50),
+              stroke = I("black"),
+              symbol = I(24),
+              type = "scatter",
+              mode = "markers",
+              showlegend = FALSE) %>% 
+    add_trace(data = df %>% 
+                filter(date == max(date),
+                       herc_region == regions[i],
+                       county != regions[i]),
+              color = ~county,
+              colors = "Paired",
+              size = I(70),
+              stroke = I("black"),
+              symbol = I(24),
+              type = "scatter",
+              mode = "markers",
+              showlegend = FALSE) %>% 
+    add_trace(data = df %>% 
+                filter(date == max(date)-7,
+                       herc_region == regions[i],
+                       county != regions[i]),
+              color = ~county,
+              colors = "Paired",
+              size = I(50),
+              stroke = I("black"),
+              symbol = I(24),
+              type = "scatter",
+              mode = "markers",
+              showlegend = FALSE) %>% 
+    add_trace(x = Inf, y = Inf,
+              color = I("#377ab5"),
+              symbol = I(24),
+              stroke = I("black"),
+              size = I(70),
+              mode = "markers",
+              name = "Today",
+              legendgroup = "note") %>% 
+    add_trace(x = Inf, y = Inf,
+              color = I("#377ab5"),
+              symbol = I(24),
+              stroke = I("black"),
+              size = I(50),
+              mode = "markers",
+              name = "7 Days Ago",
+              legendgroup = "note") %>% 
+    layout(title = list(text = paste0(regions[i], " Region"),
+                        y = 1,
+                        x = 0.1,
+                        xanchor = "left")) %>% 
+    layout(xaxis = list(title = "Burden: New Cases per 100k (last 14 days)"),
+           yaxis = list(title = "Intensity: New Cases (last 7 days)")) %>% 
+    layout(updatemenus = 
+             list(
+               list(
+                 type = "buttons",
+                 direction = "right",
+                 xanchor = "center",
+                 yanchor = "top",
+                 showactive = FALSE,
+                 x = 1.1,
+                 y = 0,
+                 buttons = list(
+                   list(method = "restyle",
+                        args = list("visible", "all"),
+                        label = "show all"),
+                   list(method = "restyle",
+                        args = list("visible", "legendonly"),
+                        label = "hide all")
+                 )
+               )
+             )
+    ) %>% 
+    config(doubleClickDelay = 500) %>%
+    config(displaylogo = FALSE)
+  
+  l[[i]] <- as_widget(fig2)
+  
+}
+
+```
+
+#### South Central
+
+```{r}
+l[[1]]
+
+```
+
+#### Northwest
+
+```{r}
+l[[2]]
+
+```
+
+#### Northeast
+
+```{r}
+l[[3]]
+
+```
+
+#### Western
+
+```{r}
+l[[4]]
+
+```
+
+#### Fox Valley Area
+
+```{r}
+l[[5]]
+
+```
+
+#### North Central
+
+```{r}
+l[[6]]
+
+```
+
+#### Southeast
+
+```{r}
+l[[7]]
+
+```
+
+
+## Burden versus Trajectory {.tabset .tabset-pills}
+
+### HERC Regions Across Wisconsin (Last 4 Weeks)
+
+```{r}
+df <- process_data(wi_regions, group_var = herc_region)
+
+fig1 <- 
+  plot_ly(data = df,
+          x = ~burden,
+          y = ~trajectory,
+          color = ~herc_region,
+          colors = "Spectral",
+          alpha = 0.7,
+          text = ~paste0("</br>", herc_region,
+                         "</br>", format(date, "%B %d, %Y"),
+                         "</br>Percent Case Change (last 2 weeks): ", 
+                         scales::percent(trajectory, accuracy = 0.1),
+                         "</br>New Cases per 100k (last 14 days): ",
+                         round(burden, 1)),
+          type = "scatter",
+          mode = 'lines+markers',
+          hoverinfo = "text",
+          legendgroup = ~herc_region) %>% 
+  add_trace(data = df %>% 
+              filter(date == max(date)),
+            color = ~herc_region,
+            colors = "Spectral",
+            size = I(70),
+            stroke = I("black"),
+            symbol = I(24),
+            type = "scatter",
+            mode = "markers",
+            showlegend = FALSE) %>% 
+  add_trace(data = df %>% 
+              filter(date == max(date)-7),
+            color = ~herc_region,
+            colors = "Spectral",
+            size = I(50),
+            stroke = I("black"),
+            symbol = I(24),
+            type = "scatter",
+            mode = "markers",
+            showlegend = FALSE) %>% 
+  add_trace(x = Inf, y = Inf,
+            color = I("#377ab5"),
+            symbol = I(24),
+            stroke = I("black"),
+            size = I(70),
+            mode = "markers",
+            name = "Today",
+            legendgroup = "note") %>% 
+  add_trace(x = Inf, y = Inf,
+            color = I("#377ab5"),
+            symbol = I(24),
+            stroke = I("black"),
+            size = I(50),
+            mode = "markers",
+            name = "7 Days Ago",
+            legendgroup = "note") %>% 
+  layout(title = list(text = "",
+                      y = 1,
+                      x = 0.1,
+                      xanchor = "left")) %>% 
+  layout(xaxis = list(title = "Burden: New Cases per 100k (last 14 days)"),
+         yaxis = list(title = "Trajectory: Percent Case Change (last 2 weeks)",
+                      tickformat = "%")) %>% 
+  layout(updatemenus = 
+           list(
+             list(
+               type = "buttons",
+               direction = "right",
+               xanchor = "center",
+               yanchor = "top",
+               showactive = FALSE,
+               x = 1.1,
+               y = 0,
+               buttons = list(
+                 list(method = "restyle",
+                      args = list("visible", "all"),
+                      label = "show all"),
+                 list(method = "restyle",
+                      args = list("visible", "legendonly"),
+                      label = "hide all")
+               )
+             )
+           )
+         ) %>% 
+  config(doubleClickDelay = 500) %>%
+  config(displaylogo = FALSE)
+
+fig1
+  
+```
+
+### Individual Regions (Last 4 Weeks) {.tabset .tabset-pills}
+
+```{r}
+# region = "South Central"
+l <- htmltools::tagList()
+
+regions <- 
+  wi_counties %>% 
+  select(herc_region) %>% 
+  distinct() %>% 
+  pull()
+
+df.1 <- 
+  process_data(wi_regions, group_var = herc_region) %>% 
+  mutate(county = herc_region) %>% 
+  select(date, county, state, herc_region, cases, deaths, population, new.cases, intensity, trajectory, burden)
+
+df.2 <- 
+  process_data(wi_counties, group_var = county) %>% 
+  select(date, county, state, herc_region, cases, deaths, population, new.cases, intensity, trajectory, burden)
+
+df <- 
+  df.1 %>% 
+  bind_rows(df.2)
+
+for(i in 1:length(regions)) {
+  fig2 <- 
+    plot_ly(data = df %>% 
+              filter(county == regions[i]),
+            x = ~burden,
+            y = ~trajectory,
+            name = regions[i],
+            color = I("#377ab5"),
+            text = ~paste0("</br>", county,
+                           "</br>", format(date, "%B %d, %Y"),
+                           "</br>Percent Case Change (last 2 weeks): ",
+                           scales::percent(trajectory, accuracy = 0.1),
+                           "</br>New Cases per 100k (last 14 days): ",
+                           round(burden, 1)),
+            type = "scatter",
+            mode = 'lines+markers',
+            hoverinfo = "text",
+            legendgroup = ~county) %>% 
+    add_trace(data = df %>% 
+                filter(herc_region == regions[i],
+                       county != regions[i]),
+              inherit = FALSE,
+              x = ~burden,
+              y = ~trajectory,
+              color = ~county,
+              colors = "Paired",
+              alpha = 0.7,
+              text = ~paste0("</br>", county,
+                             "</br>", format(date, "%B %d, %Y"),
+                             "</br>Percent Case Change (last 2 weeks): ",
+                             scales::percent(trajectory, accuracy = 0.1),
+                             "</br>New Cases per 100k (last 14 days): ",
+                             round(burden, 1)),
+              type = "scatter",
+              mode = 'lines+markers',
+              hoverinfo = "text",
+              legendgroup = ~county) %>% 
+    add_trace(data = df %>% 
+                filter(date == max(date),
+                       county == regions[i]),
+              name = regions[i],
+              color = I("#377ab5"),
+              size = I(70),
+              stroke = I("black"),
+              symbol = I(24),
+              type = "scatter",
+              mode = "markers",
+              showlegend = FALSE) %>% 
+    add_trace(data = df %>% 
+                filter(date == max(date)-7,
+                       county == regions[i]),
+              name = regions[i],
+              color = I("#377ab5"),
+              size = I(50),
+              stroke = I("black"),
+              symbol = I(24),
+              type = "scatter",
+              mode = "markers",
+              showlegend = FALSE) %>% 
+    add_trace(data = df %>% 
+                filter(date == max(date),
+                       herc_region == regions[i],
+                       county != regions[i]),
+              color = ~county,
+              colors = "Paired",
+              size = I(70),
+              stroke = I("black"),
+              symbol = I(24),
+              type = "scatter",
+              mode = "markers",
+              showlegend = FALSE) %>% 
+    add_trace(data = df %>% 
+                filter(date == max(date)-7,
+                       herc_region == regions[i],
+                       county != regions[i]),
+              color = ~county,
+              colors = "Paired",
+              size = I(50),
+              stroke = I("black"),
+              symbol = I(24),
+              type = "scatter",
+              mode = "markers",
+              showlegend = FALSE) %>% 
+    add_trace(x = Inf, y = Inf,
+              color = I("#377ab5"),
+              symbol = I(24),
+              stroke = I("black"),
+              size = I(70),
+              mode = "markers",
+              name = "Today",
+              legendgroup = "note") %>% 
+    add_trace(x = Inf, y = Inf,
+              color = I("#377ab5"),
+              symbol = I(24),
+              stroke = I("black"),
+              size = I(50),
+              mode = "markers",
+              name = "7 Days Ago",
+              legendgroup = "note") %>% 
+    layout(title = list(text = paste0(regions[i], " Region"),
+                        y = 1,
+                        x = 0.1,
+                        xanchor = "left")) %>% 
+    layout(xaxis = list(title = "Burden: New Cases per 100k (last 14 days)"),
+           yaxis = list(title = "Trajectory: Percent Case Change (last 2 weeks)",
+                        tickformat = "%")) %>% 
+    layout(updatemenus = 
+             list(
+               list(
+                 type = "buttons",
+                 direction = "right",
+                 xanchor = "center",
+                 yanchor = "top",
+                 showactive = FALSE,
+                 x = 1.1,
+                 y = 0,
+                 buttons = list(
+                   list(method = "restyle",
+                        args = list("visible", "all"),
+                        label = "show all"),
+                   list(method = "restyle",
+                        args = list("visible", "legendonly"),
+                        label = "hide all")
+                 )
+               )
+             )
+    ) %>% 
+    config(doubleClickDelay = 500) %>%
+    config(displaylogo = FALSE)
+  
+  l[[i]] <- as_widget(fig2)
+  
+}
+
+```
+
+#### South Central
+
+```{r}
+l[[1]]
+
+```
+
+#### Northwest
+
+```{r}
+l[[2]]
+
+```
+
+#### Northeast
+
+```{r}
+l[[3]]
+
+```
+
+#### Western
+
+```{r}
+l[[4]]
+
+```
+
+#### Fox Valley Area
+
+```{r}
+l[[5]]
+
+```
+
+#### North Central
+
+```{r}
+l[[6]]
+
+```
+
+#### Southeast
+
+```{r}
+l[[7]]
+
+```
+
+#
+
+*These plots are interactive*: Double click on a region in the legend to start a comparison or use the use the button at the bottom-right corner of the plot and then single click on others to add or remove them from the comparison.  Note: double-clicking may not work well on all platforms, but you may single click on a region in the legend to remove from the comparison.  
+
+## Contact
+
+We encourage suggestions of new features and improvements to make the visualizations more useful.  The authors can be contacted below.
+
+- Srikanth Aravamuthan (<aravamuthan@wisc.edu>)
+- Steve Goldstein (<sgoldstein@wisc.edu>)
+- Sean Kent (<spkent@wisc.edu>)
+
+## References
+
+COVID-19: Activity Level by Region and County. <https://www.dhs.wisconsin.gov/covid-19/local.htm>.
+
+## Sources
+
+New York Times. New York Times database of U.S. coronavirus cases. 2020. Retrieved from <https://github.com/nytimes/covid-19-data>.
+
+United States Census Bureau, County Population Totals: 2010-2019. 2019. Retrieved from <https://www.census.gov/data/tables/time-series/demo/popest/2010s-counties-total.html>.
+
+<!-- United States Census Bureau, County Adjacency File. 2010. Retrieved from <https://www.census.gov/geographies/reference-files/2010/geo/county-adjacency.html>. -->
+
+## Appendix: Burden
+(___Retrieved from [COVID-19: Activity Level by Region and County](https://www.dhs.wisconsin.gov/covid-19/local.htm)___)
+
+Burden is the total number of cases per 100,000 Wisconsin residents in the last two weeks.
+
+| Burden Status	| Value (per 100,000 Wisconsin residents in the past two weeks) |
+| :------------ | :------------------------------------------------------------ |
+| Low           | Case rate $\leq 10$                                           |
+| Moderate      | $10 <$ Case rate $\leq 50$                                    |
+| Moderately    | $50 <$ Case rate $\leq 100$                                   |
+| High	        | Case rate $> 50$                                              |
+
+## Appendix: Trajectory
+(___Retrieved from [COVID-19: Activity Level by Region and County](https://www.dhs.wisconsin.gov/covid-19/local.htm)___)
+
+Trajectory is the percent change in the last two weeks and p-value (indicates statistical significance) from a test against the percent change equal to zero.
+
+| Trajectory Status	| Value (change from prior 7-day period to most recent 7-day period) |
+| :---------------- | :----------------------------------------------------------------- |
+| Low               | Percent change in cases $\leq -10%$ and p-value $< 0.025$          |
+| Moderate          | Percent change in cases $\geq 10%$ and p-value $ <0.025$           |
+| Moderately        | Otherwise                                                          |
+
+<!-- ## Appendix: R Code -->
+
+```{r appendix, ref.label=knitr::all_labels(),echo=TRUE,eval=FALSE}
+```
