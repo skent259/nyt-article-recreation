@@ -78,7 +78,7 @@ county_population <-
 ```{r}
 
 wi_dph_regions  <- 
-  read_csv(here("DHS/wi_dph_regions.csv")) %>% 
+  read_csv("https://raw.githubusercontent.com/skent259/nyt-article-recreation/master/DHS/wi_dph_regions.csv") %>% 
   select(county, dph_region,  herc_region)
 
 
@@ -137,7 +137,7 @@ process_data <- function(data, group_var) {
     mutate(cases.per.14days.per.100k = cases.per.14days / (population/100000)) %>% 
     mutate(row = row_number()) %>% 
     filter(between(date, MIN_DATE, MAX_DATE))
-    
+  
   # TODO: add select to narrow down the variables kept
 }
 
@@ -153,30 +153,73 @@ process_data <- function(data, group_var) {
 
 ```{r}
 fig1 <- 
-    plot_ly(data = process_data(wi_regions, group_var = herc_region),
-            x = ~cases.per.14days.per.100k,
-            y = ~cases.per.7days,
-            color = ~herc_region,
-            # size = ~row, 
-            # color = I("black"),
-            colors = "Dark2", 
-            text = ~paste0("</br>", herc_region,
-                           "</br>", date,
-                           "</br>New Cases (last 7 days): ", cases.per.7days,
-                           "</br>New Cases per 100k (last 14 days): ", round(cases.per.14days.per.100k, 1)),
+  plot_ly(data = process_data(wi_regions, group_var = herc_region),
+          x = ~cases.per.14days.per.100k,
+          y = ~cases.per.7days,
+          color = ~herc_region,
+          legendgroup = ~herc_region,
+          text = ~paste0("</br>", herc_region,
+                         "</br>", format(date, "%B %d, %Y"),
+                         "</br>New Cases (last 7 days): ", cases.per.7days,
+                         "</br>New Cases per 100k (last 14 days): ", round(cases.per.14days.per.100k, 1)),
+          colors = "Dark2", 
+          type = "scatter",
+          mode = "lines",
+          hoverinfo = "text") %>% 
+  # triangles for current date (note, this plot inherits from above)
+  add_trace(data = process_data(wi_regions, group_var = herc_region) %>% 
+              filter(date == max(date)),
+            stroke = I("black"),
+            symbol = I(24),
+            size = I(70),
             type = "scatter",
-            mode = 'lines+markers',
-            hoverinfo = "text") %>% 
-    layout(title = list(text = "",
-                        y = 1,
-                        x = 0.1,
-                        xanchor = "left")) %>% 
-    layout(xaxis = list(title = "Burden: New Cases per 100k (last 14 days)"),
-           yaxis = list(title = "Intensity: New Cases (last 7 days)")) %>% 
-    config(doubleClickDelay = 500)
-  
+            mode = "markers",
+            showlegend = FALSE) %>% 
+  # smaller triangles for 7 days ago date
+  add_trace(data = process_data(wi_regions, group_var = herc_region) %>% 
+              filter(date == max(date)-7),
+            stroke = I("grey50"),
+            symbol = I(17),
+            size = I(40),
+            type = "scatter",
+            mode = "markers",
+            showlegend = FALSE) %>% 
+  # remaining points as circles
+  add_trace(data = process_data(wi_regions, group_var = herc_region) %>% 
+              filter(date != max(date) & date != max(date)-7),
+            symbol = I(20),
+            size = I(10),
+            type = "scatter",
+            mode = "markers",
+            showlegend = FALSE) %>% 
+  add_trace(x = Inf, y = Inf,
+            color = I("white"),
+            symbol = I(17),
+            stroke = I("black"),
+            size = I(70),
+            legendgroup = "second",
+            mode = "markers",
+            name = "Today") %>% 
+  add_trace(x = Inf, y = Inf,
+            color = I("white"),
+            symbol = I(17),
+            stroke = I("grey50"),
+            size = I(10),
+            legendgroup = "second",
+            mode = "markers",
+            name = "7 Days Ago") %>% 
+  layout(title = list(text = "",
+                      y = 1,
+                      x = 0.1,
+                      xanchor = "left")) %>% 
+  layout(xaxis = list(title = "Burden: New Cases per 100k (last 14 days)"),
+         yaxis = list(title = "Intensity: New Cases (last 7 days)")) %>% 
+  config(doubleClickDelay = 500)
+
 fig1
-  
+
+
+
 ```
 
 
