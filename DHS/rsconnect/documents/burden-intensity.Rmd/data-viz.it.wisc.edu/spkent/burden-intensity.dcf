@@ -1,0 +1,12 @@
+name: burden-intensity
+title: burden-intensity
+username: spkent
+account: spkent
+server: data-viz.it.wisc.edu
+hostUrl: https://data-viz.it.wisc.edu/__api__
+appId: 53
+bundleId: 189
+url: https://data-viz.it.wisc.edu/dhs/
+when: 1592932757.94152
+asMultiple: FALSE
+asStatic: FALSE
