@@ -1,0 +1,1542 @@
+---
+title: "Burden, Intensity, Trajectory of Coronavirus in Wisconsin"
+subtitle: "by Healthcare Emergency Readiness Coalition (HERC) Regions"
+# author: "Srikanth Aravamuthan & Sean Kent"
+date: "Updated `r format(Sys.time(), '%B %d, %Y, %I:00 %p %Z')`"
+output: 
+  html_document:
+    code_folding: hide
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = FALSE,
+  # cache = TRUE, 
+  message = FALSE,
+  warning = FALSE, 
+  fig.width = 10
+)
+
+library(tidyverse)
+# library(purrr)
+library(lubridate)
+library(readxl)
+# library(maps)
+# library(sf)
+library(plotly)
+# library(shiny)
+
+# library(maptools)
+# library(rgeos)
+
+library(knitr)
+library(kableExtra)
+
+```
+
+
+
+```{r data choices}
+## Data choices
+MIN_CASES_TO_PLOT <- 30
+MIN_DATE <- Sys.Date() - 28 # last 4 weeks
+MAX_DATE <- Sys.Date()
+
+# color_palette <- c(RColorBrewer::brewer.pal(21, "Paired"), rep("grey50", 20))
+```
+
+
+
+```{r nyt-data}
+# Data from the New York Times repository
+us_counties <- read_csv("https://raw.githubusercontent.com/nytimes/covid-19-data/master/us-counties.csv")
+us_states <- read_csv("https://raw.githubusercontent.com/nytimes/covid-19-data/master/us-states.csv")
+
+# NYT does this annoying thing where they count ("Kings", "Queens", "New York", "Bronx") counties 
+# as the 'county' New York City.  Attempt to fix by removing putting all of the cases/deaths in 
+# New York county, since we are aggregating by metro area anyways
+us_counties[us_counties$county == "New York City", "county"] <- "New York"
+
+```
+
+
+
+```{r population-data}
+## Population data from US census 2019 estimates
+county_population <- 
+  read_csv("https://www2.census.gov/programs-surveys/popest/datasets/2010-2019/counties/totals/co-est2019-alldata.csv") %>% 
+  filter(SUMLEV == "050") %>% 
+  mutate(CTYNAME = str_remove(CTYNAME, " County"),
+         CTYNAME = str_remove(CTYNAME, " Parish")) %>% 
+  rename(state = STNAME,
+         county = CTYNAME,
+         population = POPESTIMATE2018) %>% 
+  select(state, county, population)
+
+```
+
+
+
+```{r}
+wi_counties <- 
+  read_csv("wi_dph_regions.csv") %>% 
+  # select(-dph_region) %>% 
+  rename(
+    population = pop_2018
+    # ,
+    # region = herc_region
+  ) %>% 
+  mutate(fips = as.character(fips)) %>% 
+  select(-county) %>%
+  left_join(us_counties, by = "fips")
+
+wi_regions <- 
+  wi_counties %>% 
+  group_by(date, herc_region) %>% 
+  summarize(state = unique(state),
+            cases = sum(cases, na.rm = TRUE),
+            deaths = sum(deaths, na.rm = TRUE),
+            population = sum(population, na.rm = TRUE)) %>% 
+  ungroup()
+
+```
+
+
+
+```{r}
+process_data <- function(data, group_var) {
+  group_var <- enquo(group_var)
+  
+  data %>% 
+    group_by(!!group_var) %>% 
+    arrange(desc(date)) %>% 
+    mutate(cases = cummin(cases)) %>% 
+    arrange(date) %>% 
+    mutate(new.cases = cases - lag(cases, default = 0)) %>% 
+    mutate(intensity = cases - lag(cases, n = 7, default = 0)) %>% 
+    mutate(trajectory = (cases - lag(cases, n = 7, default = 0)) / ((lag(cases, n = 7, default = 0) - lag(cases, n = 14, default = 0))) - 1) %>% 
+    mutate(burden = (cases - lag(cases, n = 14, default = 0)) / (population / 100000)) %>% 
+    mutate(row = row_number()) %>% 
+    ungroup() %>% 
+    filter(between(date, MIN_DATE, MAX_DATE))
+    
+  # TODO: add select to narrow down the variables kept
+}
+
+# process_data(wi_regions, group_var = herc_region)
+# process_data(wi_counties, group_var = county) 
+
+```
+
+# {.tabset .tabset-pills}
+
+___Work in Progress___: The following is a preliminary set of visualizations to track the burden, intensity, and trajectory of Healthcare Emergency Readiness Coalition (HERC) regions in Wisconsin. 
+
+## Burden versus Intensity {.tabset .tabset-pills}
+
+### HERC Regions Across Wisconsin (Last 4 Weeks)
+
+```{r}
+df <- process_data(wi_regions, group_var = herc_region)
+
+fig1 <- 
+  plot_ly(data = df,
+          x = ~burden,
+          y = ~intensity,
+          color = ~herc_region,
+          colors = "Spectral",
+          alpha = 0.7,
+          text = ~paste0("</br>", herc_region,
+                         "</br>", format(date, "%B %d, %Y"),
+                         "</br>New Cases (last 7 days): ", intensity,
+                         "</br>New Cases per 100k (last 14 days): ",
+                         round(burden, 1)),
+          type = "scatter",
+          mode = 'lines+markers',
+          hoverinfo = "text",
+          legendgroup = ~herc_region) %>% 
+  add_trace(data = df %>% 
+              filter(date == max(date)),
+            color = ~herc_region,
+            colors = "Spectral",
+            size = I(70),
+            stroke = I("black"),
+            symbol = I(24),
+            type = "scatter",
+            mode = "markers",
+            showlegend = FALSE) %>% 
+  add_trace(data = df %>% 
+              filter(date == max(date)-7),
+            color = ~herc_region,
+            colors = "Spectral",
+            size = I(50),
+            stroke = I("black"),
+            symbol = I(24),
+            type = "scatter",
+            mode = "markers",
+            showlegend = FALSE) %>% 
+  add_trace(x = Inf, y = Inf,
+            color = I("#377ab5"),
+            symbol = I(24),
+            stroke = I("black"),
+            size = I(70),
+            mode = "markers",
+            name = "Today",
+            legendgroup = "note") %>% 
+  add_trace(x = Inf, y = Inf,
+            color = I("#377ab5"),
+            symbol = I(24),
+            stroke = I("black"),
+            size = I(50),
+            mode = "markers",
+            name = "7 Days Ago",
+            legendgroup = "note") %>% 
+  layout(title = list(text = "",
+                      y = 1,
+                      x = 0.1,
+                      xanchor = "left")) %>% 
+  layout(xaxis = list(title = "Burden: New Cases per 100k (last 14 days)"),
+         yaxis = list(title = "Intensity: New Cases (last 7 days)")) %>% 
+  layout(updatemenus = 
+           list(
+             list(
+               type = "buttons",
+               direction = "right",
+               xanchor = "center",
+               yanchor = "top",
+               showactive = FALSE,
+               x = 1.1,
+               y = 0,
+               buttons = list(
+                 list(method = "restyle",
+                      args = list("visible", "all"),
+                      label = "show all"),
+                 list(method = "restyle",
+                      args = list("visible", "legendonly"),
+                      label = "hide all")
+               )
+             )
+           )
+         ) %>% 
+  config(doubleClickDelay = 500) %>%
+  config(displaylogo = FALSE)
+
+fig1
+  
+```
+
+### Individual Regions (Last 4 Weeks) {.tabset .tabset-pills}
+
+```{r}
+# region = "South Central"
+l <- htmltools::tagList()
+
+regions <- 
+  wi_counties %>% 
+  select(herc_region) %>% 
+  distinct() %>% 
+  pull()
+
+df.1 <- 
+  process_data(wi_regions, group_var = herc_region) %>% 
+  mutate(county = herc_region) %>% 
+  select(date, county, state, herc_region, cases, deaths, population, new.cases, intensity, trajectory, burden)
+
+df.2 <- 
+  process_data(wi_counties, group_var = county) %>% 
+  select(date, county, state, herc_region, cases, deaths, population, new.cases, intensity, trajectory, burden)
+
+df <- 
+  df.1 %>% 
+  bind_rows(df.2)
+
+for(i in 1:length(regions)) {
+  fig2 <- 
+    plot_ly(data = df %>% 
+              filter(county == regions[i]),
+            x = ~burden,
+            y = ~intensity,
+            name = regions[i],
+            color = I("#377ab5"),
+            text = ~paste0("</br>", county,
+                           "</br>", format(date, "%B %d, %Y"),
+                           "</br>New Cases (last 7 days): ", intensity,
+                           "</br>New Cases per 100k (last 14 days): ",
+                           round(burden, 1)),
+            type = "scatter",
+            mode = 'lines+markers',
+            hoverinfo = "text",
+            legendgroup = ~county) %>% 
+    add_trace(data = df %>% 
+                filter(herc_region == regions[i],
+                       county != regions[i]),
+              inherit = FALSE,
+              x = ~burden,
+              y = ~intensity,
+              color = ~county,
+              colors = "Paired",
+              alpha = 0.7,
+              text = ~paste0("</br>", county,
+                             "</br>", format(date, "%B %d, %Y"),
+                             "</br>New Cases (last 7 days): ", intensity,
+                             "</br>New Cases per 100k (last 14 days): ",
+                             round(burden, 1)),
+              type = "scatter",
+              mode = 'lines+markers',
+              hoverinfo = "text",
+              legendgroup = ~county) %>% 
+    add_trace(data = df %>% 
+                filter(date == max(date),
+                       county == regions[i]),
+              name = regions[i],
+              color = I("#377ab5"),
+              size = I(70),
+              stroke = I("black"),
+              symbol = I(24),
+              type = "scatter",
+              mode = "markers",
+              showlegend = FALSE) %>% 
+    add_trace(data = df %>% 
+                filter(date == max(date)-7,
+                       county == regions[i]),
+              name = regions[i],
+              color = I("#377ab5"),
+              size = I(50),
+              stroke = I("black"),
+              symbol = I(24),
+              type = "scatter",
+              mode = "markers",
+              showlegend = FALSE) %>% 
+    add_trace(data = df %>% 
+                filter(date == max(date),
+                       herc_region == regions[i],
+                       county != regions[i]),
+              color = ~county,
+              colors = "Paired",
+              size = I(70),
+              stroke = I("black"),
+              symbol = I(24),
+              type = "scatter",
+              mode = "markers",
+              showlegend = FALSE) %>% 
+    add_trace(data = df %>% 
+                filter(date == max(date)-7,
+                       herc_region == regions[i],
+                       county != regions[i]),
+              color = ~county,
+              colors = "Paired",
+              size = I(50),
+              stroke = I("black"),
+              symbol = I(24),
+              type = "scatter",
+              mode = "markers",
+              showlegend = FALSE) %>% 
+    add_trace(x = Inf, y = Inf,
+              color = I("#377ab5"),
+              symbol = I(24),
+              stroke = I("black"),
+              size = I(70),
+              mode = "markers",
+              name = "Today",
+              legendgroup = "note") %>% 
+    add_trace(x = Inf, y = Inf,
+              color = I("#377ab5"),
+              symbol = I(24),
+              stroke = I("black"),
+              size = I(50),
+              mode = "markers",
+              name = "7 Days Ago",
+              legendgroup = "note") %>% 
+    layout(title = list(text = paste0(regions[i], " Region"),
+                        y = 1,
+                        x = 0.1,
+                        xanchor = "left")) %>% 
+    layout(xaxis = list(title = "Burden: New Cases per 100k (last 14 days)"),
+           yaxis = list(title = "Intensity: New Cases (last 7 days)")) %>% 
+    layout(updatemenus = 
+             list(
+               list(
+                 type = "buttons",
+                 direction = "right",
+                 xanchor = "center",
+                 yanchor = "top",
+                 showactive = FALSE,
+                 x = 1.1,
+                 y = 0,
+                 buttons = list(
+                   list(method = "restyle",
+                        args = list("visible", "all"),
+                        label = "show all"),
+                   list(method = "restyle",
+                        args = list("visible", "legendonly"),
+                        label = "hide all")
+                 )
+               )
+             )
+    ) %>% 
+    config(doubleClickDelay = 500) %>%
+    config(displaylogo = FALSE)
+  
+  l[[i]] <- as_widget(fig2)
+  
+}
+
+```
+
+#### South Central
+
+```{r}
+l[[1]]
+
+```
+
+#### Northwest
+
+```{r}
+l[[2]]
+
+```
+
+#### Northeast
+
+```{r}
+l[[3]]
+
+```
+
+#### Western
+
+```{r}
+l[[4]]
+
+```
+
+#### Fox Valley Area
+
+```{r}
+l[[5]]
+
+```
+
+#### North Central
+
+```{r}
+l[[6]]
+
+```
+
+#### Southeast
+
+```{r}
+l[[7]]
+
+```
+
+
+## Burden versus Trajectory {.tabset .tabset-pills}
+
+### HERC Regions Across Wisconsin (Last 4 Weeks)
+
+```{r}
+df <- process_data(wi_regions, group_var = herc_region)
+
+fig1 <- 
+  plot_ly(data = df,
+          x = ~burden,
+          y = ~trajectory,
+          color = ~herc_region,
+          colors = "Spectral",
+          alpha = 0.7,
+          text = ~paste0("</br>", herc_region,
+                         "</br>", format(date, "%B %d, %Y"),
+                         "</br>Percent Case Change (last 2 weeks): ", 
+                         scales::percent(trajectory, accuracy = 0.1),
+                         "</br>New Cases per 100k (last 14 days): ",
+                         round(burden, 1)),
+          type = "scatter",
+          mode = 'lines+markers',
+          hoverinfo = "text",
+          legendgroup = ~herc_region) %>% 
+  add_trace(data = df %>% 
+              filter(date == max(date)),
+            color = ~herc_region,
+            colors = "Spectral",
+            size = I(70),
+            stroke = I("black"),
+            symbol = I(24),
+            type = "scatter",
+            mode = "markers",
+            showlegend = FALSE) %>% 
+  add_trace(data = df %>% 
+              filter(date == max(date)-7),
+            color = ~herc_region,
+            colors = "Spectral",
+            size = I(50),
+            stroke = I("black"),
+            symbol = I(24),
+            type = "scatter",
+            mode = "markers",
+            showlegend = FALSE) %>% 
+  add_trace(x = Inf, y = Inf,
+            color = I("#377ab5"),
+            symbol = I(24),
+            stroke = I("black"),
+            size = I(70),
+            mode = "markers",
+            name = "Today",
+            legendgroup = "note") %>% 
+  add_trace(x = Inf, y = Inf,
+            color = I("#377ab5"),
+            symbol = I(24),
+            stroke = I("black"),
+            size = I(50),
+            mode = "markers",
+            name = "7 Days Ago",
+            legendgroup = "note") %>% 
+  layout(title = list(text = "",
+                      y = 1,
+                      x = 0.1,
+                      xanchor = "left")) %>% 
+  layout(xaxis = list(title = "Burden: New Cases per 100k (last 14 days)"),
+         yaxis = list(title = "Trajectory: Percent Case Change (last 2 weeks)",
+                      tickformat = "%")) %>% 
+  layout(updatemenus = 
+           list(
+             list(
+               type = "buttons",
+               direction = "right",
+               xanchor = "center",
+               yanchor = "top",
+               showactive = FALSE,
+               x = 1.1,
+               y = 0,
+               buttons = list(
+                 list(method = "restyle",
+                      args = list("visible", "all"),
+                      label = "show all"),
+                 list(method = "restyle",
+                      args = list("visible", "legendonly"),
+                      label = "hide all")
+               )
+             )
+           )
+         ) %>% 
+  config(doubleClickDelay = 500) %>%
+  config(displaylogo = FALSE)
+
+fig1
+  
+```
+
+### Individual Regions (Last 4 Weeks) {.tabset .tabset-pills}
+
+```{r}
+# region = "South Central"
+l <- htmltools::tagList()
+
+regions <- 
+  wi_counties %>% 
+  select(herc_region) %>% 
+  distinct() %>% 
+  pull()
+
+df.1 <- 
+  process_data(wi_regions, group_var = herc_region) %>% 
+  mutate(county = herc_region) %>% 
+  select(date, county, state, herc_region, cases, deaths, population, new.cases, intensity, trajectory, burden)
+
+df.2 <- 
+  process_data(wi_counties, group_var = county) %>% 
+  select(date, county, state, herc_region, cases, deaths, population, new.cases, intensity, trajectory, burden)
+
+df <- 
+  df.1 %>% 
+  bind_rows(df.2)
+
+for(i in 1:length(regions)) {
+  fig2 <- 
+    plot_ly(data = df %>% 
+              filter(county == regions[i]),
+            x = ~burden,
+            y = ~trajectory,
+            name = regions[i],
+            color = I("#377ab5"),
+            text = ~paste0("</br>", county,
+                           "</br>", format(date, "%B %d, %Y"),
+                           "</br>Percent Case Change (last 2 weeks): ",
+                           scales::percent(trajectory, accuracy = 0.1),
+                           "</br>New Cases per 100k (last 14 days): ",
+                           round(burden, 1)),
+            type = "scatter",
+            mode = 'lines+markers',
+            hoverinfo = "text",
+            legendgroup = ~county) %>% 
+    add_trace(data = df %>% 
+                filter(herc_region == regions[i],
+                       county != regions[i]),
+              inherit = FALSE,
+              x = ~burden,
+              y = ~trajectory,
+              color = ~county,
+              colors = "Paired",
+              alpha = 0.7,
+              text = ~paste0("</br>", county,
+                             "</br>", format(date, "%B %d, %Y"),
+                             "</br>Percent Case Change (last 2 weeks): ",
+                             scales::percent(trajectory, accuracy = 0.1),
+                             "</br>New Cases per 100k (last 14 days): ",
+                             round(burden, 1)),
+              type = "scatter",
+              mode = 'lines+markers',
+              hoverinfo = "text",
+              legendgroup = ~county) %>% 
+    add_trace(data = df %>% 
+                filter(date == max(date),
+                       county == regions[i]),
+              name = regions[i],
+              color = I("#377ab5"),
+              size = I(70),
+              stroke = I("black"),
+              symbol = I(24),
+              type = "scatter",
+              mode = "markers",
+              showlegend = FALSE) %>% 
+    add_trace(data = df %>% 
+                filter(date == max(date)-7,
+                       county == regions[i]),
+              name = regions[i],
+              color = I("#377ab5"),
+              size = I(50),
+              stroke = I("black"),
+              symbol = I(24),
+              type = "scatter",
+              mode = "markers",
+              showlegend = FALSE) %>% 
+    add_trace(data = df %>% 
+                filter(date == max(date),
+                       herc_region == regions[i],
+                       county != regions[i]),
+              color = ~county,
+              colors = "Paired",
+              size = I(70),
+              stroke = I("black"),
+              symbol = I(24),
+              type = "scatter",
+              mode = "markers",
+              showlegend = FALSE) %>% 
+    add_trace(data = df %>% 
+                filter(date == max(date)-7,
+                       herc_region == regions[i],
+                       county != regions[i]),
+              color = ~county,
+              colors = "Paired",
+              size = I(50),
+              stroke = I("black"),
+              symbol = I(24),
+              type = "scatter",
+              mode = "markers",
+              showlegend = FALSE) %>% 
+    add_trace(x = Inf, y = Inf,
+              color = I("#377ab5"),
+              symbol = I(24),
+              stroke = I("black"),
+              size = I(70),
+              mode = "markers",
+              name = "Today",
+              legendgroup = "note") %>% 
+    add_trace(x = Inf, y = Inf,
+              color = I("#377ab5"),
+              symbol = I(24),
+              stroke = I("black"),
+              size = I(50),
+              mode = "markers",
+              name = "7 Days Ago",
+              legendgroup = "note") %>% 
+    layout(title = list(text = paste0(regions[i], " Region"),
+                        y = 1,
+                        x = 0.1,
+                        xanchor = "left")) %>% 
+    layout(xaxis = list(title = "Burden: New Cases per 100k (last 14 days)"),
+           yaxis = list(title = "Trajectory: Percent Case Change (last 2 weeks)",
+                        tickformat = "%")) %>% 
+    layout(updatemenus = 
+             list(
+               list(
+                 type = "buttons",
+                 direction = "right",
+                 xanchor = "center",
+                 yanchor = "top",
+                 showactive = FALSE,
+                 x = 1.1,
+                 y = 0,
+                 buttons = list(
+                   list(method = "restyle",
+                        args = list("visible", "all"),
+                        label = "show all"),
+                   list(method = "restyle",
+                        args = list("visible", "legendonly"),
+                        label = "hide all")
+                 )
+               )
+             )
+    ) %>% 
+    config(doubleClickDelay = 500) %>%
+    config(displaylogo = FALSE)
+  
+  l[[i]] <- as_widget(fig2)
+  
+}
+
+```
+
+#### South Central
+
+```{r}
+l[[1]]
+
+```
+
+#### Northwest
+
+```{r}
+l[[2]]
+
+```
+
+#### Northeast
+
+```{r}
+l[[3]]
+
+```
+
+#### Western
+
+```{r}
+l[[4]]
+
+```
+
+#### Fox Valley Area
+
+```{r}
+l[[5]]
+
+```
+
+#### North Central
+
+```{r}
+l[[6]]
+
+```
+
+#### Southeast
+
+```{r}
+l[[7]]
+
+```
+
+## Maps {.tabset .tabset-pills}
+
+```{r}
+county <-
+  maps::map("county", plot = FALSE, fill = TRUE) %>%
+  sf::st_as_sf() %>%
+  separate(ID, c("state", "county"), ",") %>%
+  filter(state == "wisconsin") %>% 
+  mutate(state = tools::toTitleCase(state),
+         county = tools::toTitleCase(county))
+
+wi_current <- 
+  wi_counties %>% 
+  group_by(county) %>% 
+    arrange(desc(date)) %>% 
+    mutate(cases = cummin(cases)) %>% 
+    arrange(date) %>% 
+    mutate(new.cases = cases - lag(cases, default = 0)) %>% 
+    mutate(intensity = cases - lag(cases, n = 7, default = 0)) %>% 
+    mutate(trajectory = (cases - lag(cases, n = 7, default = 0)) / ((lag(cases, n = 7, default = 0) - lag(cases, n = 14, default = 0))) - 1) %>% 
+    mutate(burden = (cases - lag(cases, n = 14, default = 0)) / (population / 100000)) %>% 
+    mutate(row = row_number()) %>% 
+    ungroup()
+
+```
+
+### Burden {.tabset .tabset-pills}
+
+#### Value
+
+```{r dpi = 96}
+## US Metro Map (Cases)
+fig_counties_burden <- county %>% 
+  mutate(county = ifelse(county == "Fond Du Lac", "Fond du Lac", county),
+         county = ifelse(county == "St Croix", "St. Croix", county)) %>% 
+  left_join(wi_current, by = c("state", "county")) %>% 
+  filter(between(date, MIN_DATE, MAX_DATE)) %>% 
+  # left_join(county_population, by = c("state", "county")) %>% 
+  # mutate(burden = ifelse(is.infinite(burden) | is.nan(burden), NA, burden)) %>% 
+  group_by(date) %>% 
+  mutate(burden.rank = rank(-burden, na.last = "keep", ties.method = "min"),
+         burden.out.of = sum(!is.na(burden))) %>% 
+  ungroup() %>% 
+  mutate(burden.tool.tip = burden,
+         burden.discrete = cut(burden,
+                               c(-0.001, 10, 25, 50, 75, 100, 250, 1000))) %>%
+  # sf::st_transform(crs = "+proj=aea +lat_1=25 +lat_2=50 +lon_0=-100") %>% 
+  sf::st_cast("MULTIPOLYGON") %>%
+  plot_ly(split = ~county, 
+          color = ~burden.discrete, 
+          colors = "YlGnBu", 
+          span = I(1),
+          stroke = I("gray50"),
+          alpha = 1,
+          text = ~paste0("</br>", county, 
+                         "</br>Cases: ", cases, 
+                         "</br>New Cases (Last 7 Days): ", intensity, 
+                         "</br>Population: ", population, 
+                         "</br>Burden: ", round(burden.tool.tip, 3),
+                         " (", burden.rank, " out of ", burden.out.of, ")"),
+          hoverinfo = "text",
+          hoveron = "fills", 
+          frame = ~date,
+          ids = ~county) %>% 
+  layout(title="",
+         showlegend = FALSE) %>%
+#   colorbar(title = "Cases per Thousand") %>% 
+  animation_opts(frame = 1000, transition = 0, redraw = FALSE, mode = "afterall") %>% 
+  animation_slider() %>%
+  config(displaylogo = FALSE)
+
+# fig_counties_burden
+
+```
+
+```{r dpi = 96}
+## US Metro Map (Cases)
+fig_regions_burden <- county %>% 
+  mutate(county = ifelse(county == "Fond Du Lac", "Fond du Lac", county),
+         county = ifelse(county == "St Croix", "St. Croix", county)) %>% 
+  left_join(wi_current, by = c("state", "county")) %>%
+  # left_join(county_population, by = c("state", "county")) %>% 
+  group_by(date, herc_region) %>% 
+  summarize(cases = sum(cases, na.rm = TRUE),
+            deaths = sum(deaths, na.rm = TRUE),
+            population = sum(population, na.rm = TRUE),
+            geometry = sf::st_union(sf::st_buffer(geometry,0.0))) %>% 
+  ungroup() %>% 
+  group_by(herc_region) %>% 
+  arrange(desc(date)) %>% 
+  mutate(cases = cummin(cases)) %>% 
+  arrange(date) %>% 
+  mutate(new.cases = cases - lag(cases, default = 0),
+         intensity = cases - lag(cases, n = 7, default = 0),
+         trajectory = (cases - lag(cases, n = 7, default = 0)) / ((lag(cases, n = 7, default = 0) - lag(cases, n = 14, default = 0))) - 1,
+         burden = (cases - lag(cases, n = 14, default = 0)) / (population / 100000)) %>% 
+  mutate(row = row_number()) %>% 
+  ungroup() %>% 
+  filter(between(date, MIN_DATE, MAX_DATE)) %>% 
+  # mutate(burden = ifelse(is.infinite(burden) | is.nan(burden), NA, burden)) %>% 
+  group_by(date) %>% 
+  mutate(burden.rank = rank(-burden, na.last = "keep", ties.method = "min"),
+         burden.out.of = sum(!is.na(burden))) %>% 
+  ungroup() %>% 
+  mutate(burden.tool.tip = burden,
+         burden.discrete = cut(burden,
+                               c(-0.001, 10, 25, 50, 75, 100, 250, 1000))) %>%
+  # sf::st_transform(crs = "+proj=aea +lat_1=25 +lat_2=50 +lon_0=-100") %>% 
+  sf::st_cast("MULTIPOLYGON") %>%
+  plot_ly(split = ~county, 
+          color = ~burden.discrete, 
+          colors = "YlGnBu", 
+          span = I(1),
+          stroke = I("gray50"),
+          alpha = 1,
+          text = ~paste0("</br>", county, 
+                         "</br>Cases: ", cases, 
+                         "</br>New Cases (Last 7 Days): ", intensity, 
+                         "</br>Population: ", population, 
+                         "</br>Burden: ", round(burden.tool.tip, 3),
+                         " (", burden.rank, " out of ", burden.out.of, ")"),
+          hoverinfo = "text",
+          hoveron = "fills", 
+          frame = ~date,
+          ids = ~county) %>% 
+  layout(title="",
+         showlegend = FALSE) %>%
+#   colorbar(title = "Cases per Thousand") %>% 
+  animation_opts(frame = 1000, transition = 0, redraw = FALSE, mode = "afterall") %>% 
+  animation_slider() %>%
+  config(displaylogo = FALSE)
+
+# fig_regions_burden
+
+```
+
+```{r}
+subplot(fig_regions_burden, fig_counties_burden) %>% 
+  animation_opts(frame = 1000, transition = 0, redraw = FALSE, mode = "afterall") %>% 
+  animation_slider() %>%
+  config(displaylogo = FALSE)
+
+```
+
+#### Status
+
+```{r dpi = 96}
+## US Metro Map (Cases)
+fig_counties_burden <- county %>% 
+  mutate(county = ifelse(county == "Fond Du Lac", "Fond du Lac", county),
+         county = ifelse(county == "St Croix", "St. Croix", county)) %>% 
+  left_join(wi_current, by = c("state", "county")) %>% 
+  filter(between(date, MIN_DATE, MAX_DATE)) %>% 
+  # left_join(county_population, by = c("state", "county")) %>% 
+  # mutate(burden = ifelse(is.infinite(burden) | is.nan(burden), NA, burden)) %>% 
+  group_by(date) %>% 
+  mutate(burden.rank = rank(-burden, na.last = "keep", ties.method = "min"),
+         burden.out.of = sum(!is.na(burden))) %>% 
+  ungroup() %>% 
+  mutate(burden.tool.tip = burden,
+         burden.discrete = cut(burden,
+                               c(-0.001, 10, 50, 100, 1000),
+                               c("Low","Moderate","Moderately High","High"))) %>%
+  # sf::st_transform(crs = "+proj=aea +lat_1=25 +lat_2=50 +lon_0=-100") %>% 
+  sf::st_cast("MULTIPOLYGON") %>%
+  plot_ly(split = ~county, 
+          color = ~burden.discrete, 
+          colors = "RdYlBu", 
+          span = I(1),
+          stroke = I("gray50"),
+          alpha = 1,
+          text = ~paste0("</br>", county, 
+                         "</br>Cases: ", cases, 
+                         "</br>New Cases (Last 7 Days): ", intensity, 
+                         "</br>Population: ", population, 
+                         "</br>Burden: ", round(burden.tool.tip, 3),
+                         " (", burden.rank, " out of ", burden.out.of, ")",
+                         "</br>Burden Status: ", burden.discrete),
+          hoverinfo = "text",
+          hoveron = "fills", 
+          frame = ~date,
+          ids = ~county) %>% 
+  layout(title="",
+         showlegend = FALSE) %>%
+#   colorbar(title = "Cases per Thousand") %>% 
+  animation_opts(frame = 1000, transition = 0, redraw = FALSE, mode = "afterall") %>% 
+  animation_slider() %>%
+  config(displaylogo = FALSE)
+
+# fig_counties_burden
+
+```
+
+```{r dpi = 96}
+## US Metro Map (Cases)
+fig_regions_burden <- county %>% 
+  mutate(county = ifelse(county == "Fond Du Lac", "Fond du Lac", county),
+         county = ifelse(county == "St Croix", "St. Croix", county)) %>% 
+  left_join(wi_current, by = c("state", "county")) %>%
+  # left_join(county_population, by = c("state", "county")) %>% 
+  group_by(date, herc_region) %>% 
+  summarize(cases = sum(cases, na.rm = TRUE),
+            deaths = sum(deaths, na.rm = TRUE),
+            population = sum(population, na.rm = TRUE),
+            geometry = sf::st_union(sf::st_buffer(geometry,0.0))) %>% 
+  ungroup() %>% 
+  group_by(herc_region) %>% 
+  arrange(desc(date)) %>% 
+  mutate(cases = cummin(cases)) %>% 
+  arrange(date) %>% 
+  mutate(new.cases = cases - lag(cases, default = 0),
+         intensity = cases - lag(cases, n = 7, default = 0),
+         trajectory = (cases - lag(cases, n = 7, default = 0)) / ((lag(cases, n = 7, default = 0) - lag(cases, n = 14, default = 0))) - 1,
+         burden = (cases - lag(cases, n = 14, default = 0)) / (population / 100000)) %>% 
+  mutate(row = row_number()) %>% 
+  ungroup() %>% 
+  filter(between(date, MIN_DATE, MAX_DATE)) %>% 
+  # mutate(burden = ifelse(is.infinite(burden) | is.nan(burden), NA, burden)) %>% 
+  group_by(date) %>% 
+  mutate(burden.rank = rank(-burden, na.last = "keep", ties.method = "min"),
+         burden.out.of = sum(!is.na(burden))) %>% 
+  ungroup() %>% 
+  mutate(burden.tool.tip = burden,
+         burden.discrete = cut(burden,
+                               c(-0.001, 10, 50, 100, 1000),
+                               c("Low","Moderate","Moderately High","High"))) %>%
+  # sf::st_transform(crs = "+proj=aea +lat_1=25 +lat_2=50 +lon_0=-100") %>% 
+  sf::st_cast("MULTIPOLYGON") %>%
+  plot_ly(split = ~county, 
+          color = ~burden.discrete, 
+          colors = "RdYlBu", 
+          span = I(1),
+          stroke = I("gray50"),
+          alpha = 1,
+          text = ~paste0("</br>", county, 
+                         "</br>Cases: ", cases, 
+                         "</br>New Cases (Last 7 Days): ", intensity, 
+                         "</br>Population: ", population, 
+                         "</br>Burden: ", round(burden.tool.tip, 3),
+                         " (", burden.rank, " out of ", burden.out.of, ")",
+                         "</br>Burden Status: ", burden.discrete),
+          hoverinfo = "text",
+          hoveron = "fills", 
+          frame = ~date,
+          ids = ~county) %>% 
+  layout(title="",
+         showlegend = FALSE) %>%
+#   colorbar(title = "Cases per Thousand") %>% 
+  animation_opts(frame = 1000, transition = 0, redraw = FALSE, mode = "afterall") %>% 
+  animation_slider() %>%
+  config(displaylogo = FALSE)
+
+# fig_regions_burden
+
+```
+
+```{r}
+subplot(fig_regions_burden, fig_counties_burden) %>% 
+  animation_opts(frame = 1000, transition = 0, redraw = FALSE, mode = "afterall") %>% 
+  animation_slider() %>%
+  config(displaylogo = FALSE)
+
+```
+
+### Trajectory {.tabset .tabset-pills}
+
+#### Value
+
+```{r dpi = 96}
+## US Metro Map (Cases)
+fig_counties_trajectory <- county %>% 
+  mutate(county = ifelse(county == "Fond Du Lac", "Fond du Lac", county),
+         county = ifelse(county == "St Croix", "St. Croix", county)) %>% 
+  left_join(wi_current, by = c("state", "county")) %>% 
+  filter(between(date, MIN_DATE, MAX_DATE)) %>% 
+  # left_join(county_population, by = c("state", "county")) %>% 
+  mutate(trajectory = ifelse(is.infinite(trajectory) | is.nan(trajectory), NA, trajectory)) %>% 
+  group_by(date) %>% 
+  mutate(trajectory.rank = rank(-trajectory, na.last = "keep", ties.method = "min"),
+         trajectory.out.of = sum(!is.na(trajectory))) %>% 
+  ungroup() %>% 
+  mutate(trajectory.tool.tip = trajectory,
+         trajectory.discrete = cut(trajectory,
+                                   c(-1.001, -0.5, 0, 0.1, 0.5, 1, 2, 1000))) %>%
+  # sf::st_transform(crs = "+proj=aea +lat_1=25 +lat_2=50 +lon_0=-100") %>% 
+  sf::st_cast("MULTIPOLYGON") %>%
+  plot_ly(split = ~county, 
+          color = ~trajectory.discrete, 
+          colors = "YlGnBu", 
+          span = I(1),
+          stroke = I("gray50"),
+          alpha = 1,
+          text = ~paste0("</br>", county, 
+                         "</br>Cases: ", cases, 
+                         "</br>New Cases (Last 7 Days): ", intensity, 
+                         "</br>Population: ", population, 
+                         "</br>Trajectory: ", scales::percent(trajectory.tool.tip, accuracy = 1),
+                         " (", trajectory.rank, " out of ", trajectory.out.of, ")"),
+          hoverinfo = "text",
+          hoveron = "fills", 
+          frame = ~date,
+          ids = ~county) %>% 
+  layout(title="",
+         showlegend = FALSE) %>%
+#   colorbar(title = "Cases per Thousand") %>% 
+  animation_opts(frame = 1000, transition = 0, redraw = FALSE, mode = "afterall") %>% 
+  animation_slider() %>%
+  config(displaylogo = FALSE)
+
+# fig_counties_trajectory
+
+```
+
+```{r dpi = 96}
+## US Metro Map (Cases)
+fig_regions_trajectory <- county %>% 
+  mutate(county = ifelse(county == "Fond Du Lac", "Fond du Lac", county),
+         county = ifelse(county == "St Croix", "St. Croix", county)) %>% 
+  left_join(wi_current, by = c("state", "county")) %>%
+  # left_join(county_population, by = c("state", "county")) %>% 
+  group_by(date, herc_region) %>% 
+  summarize(cases = sum(cases, na.rm = TRUE),
+            deaths = sum(deaths, na.rm = TRUE),
+            population = sum(population, na.rm = TRUE),
+            geometry = sf::st_union(sf::st_buffer(geometry,0.0))) %>% 
+  ungroup() %>% 
+  group_by(herc_region) %>% 
+  arrange(desc(date)) %>% 
+  mutate(cases = cummin(cases)) %>% 
+  arrange(date) %>% 
+  mutate(new.cases = cases - lag(cases, default = 0),
+         intensity = cases - lag(cases, n = 7, default = 0),
+         trajectory = (cases - lag(cases, n = 7, default = 0)) / ((lag(cases, n = 7, default = 0) - lag(cases, n = 14, default = 0))) - 1,
+         burden = (cases - lag(cases, n = 14, default = 0)) / (population / 100000)) %>% 
+  mutate(row = row_number()) %>% 
+  ungroup() %>% 
+  filter(between(date, MIN_DATE, MAX_DATE)) %>% 
+  mutate(trajectory = ifelse(is.infinite(trajectory) | is.nan(trajectory), NA, trajectory)) %>% 
+  group_by(date) %>% 
+  mutate(trajectory.rank = rank(-trajectory, na.last = "keep", ties.method = "min"),
+         trajectory.out.of = sum(!is.na(trajectory))) %>% 
+  ungroup() %>% 
+  mutate(trajectory.tool.tip = trajectory,
+         trajectory.discrete = cut(trajectory,
+                                   c(-1.001, -0.5, 0, 0.1, 0.5, 1, 2, 1000))) %>%
+  # sf::st_transform(crs = "+proj=aea +lat_1=25 +lat_2=50 +lon_0=-100") %>% 
+  sf::st_cast("MULTIPOLYGON") %>%
+  plot_ly(split = ~county, 
+          color = ~trajectory.discrete, 
+          colors = "YlGnBu", 
+          span = I(1),
+          stroke = I("gray50"),
+          alpha = 1,
+          text = ~paste0("</br>", county, 
+                         "</br>Cases: ", cases, 
+                         "</br>New Cases (Last 7 Days): ", intensity, 
+                         "</br>Population: ", population, 
+                         "</br>Trajectory: ", scales::percent(trajectory.tool.tip, accuracy = 1),
+                         " (", trajectory.rank, " out of ", trajectory.out.of, ")"),
+          hoverinfo = "text",
+          hoveron = "fills", 
+          frame = ~date,
+          ids = ~county) %>% 
+  layout(title="",
+         showlegend = FALSE) %>%
+#   colorbar(title = "Cases per Thousand") %>% 
+  animation_opts(frame = 1000, transition = 0, redraw = FALSE, mode = "afterall") %>% 
+  animation_slider() %>%
+  config(displaylogo = FALSE)
+
+# fig_regions_trajectory
+
+```
+
+```{r}
+subplot(fig_regions_trajectory, fig_counties_trajectory) %>% 
+  animation_opts(frame = 1000, transition = 0, redraw = FALSE, mode = "afterall") %>% 
+  animation_slider() %>%
+  config(displaylogo = FALSE)
+
+```
+
+#### Status
+
+```{r dpi = 96}
+## US Metro Map (Cases)
+fig_counties_trajectory <- county %>% 
+  mutate(county = ifelse(county == "Fond Du Lac", "Fond du Lac", county),
+         county = ifelse(county == "St Croix", "St. Croix", county)) %>% 
+  left_join(wi_current, by = c("state", "county")) %>% 
+  group_by(county) %>% 
+  arrange(date) %>% 
+  mutate(intensity.1 = cases - lag(cases, n = 7, default = 0),
+         intensity.2 = cases - lag(cases, n = 14, default = 0),
+         p.value = pmap(.l = list(intensity.1, intensity.2), .f = function(intensity.1, intensity.2) poisson.test(c(intensity.1, intensity.2), c(1, 2))$p.value) %>% 
+           unlist()) %>% 
+  ungroup() %>% 
+  filter(between(date, MIN_DATE, MAX_DATE)) %>% 
+  # left_join(county_population, by = c("state", "county")) %>% 
+  mutate(trajectory = ifelse(is.infinite(trajectory) | is.nan(trajectory), NA, trajectory)) %>% 
+  group_by(date) %>% 
+  mutate(trajectory.rank = rank(-trajectory, na.last = "keep", ties.method = "min"),
+         trajectory.out.of = sum(!is.na(trajectory))) %>% 
+  ungroup() %>% 
+  mutate(trajectory.tool.tip = trajectory,
+         trajectory.discrete = 
+           case_when(
+             p.value >= 0.025 ~ "No Significant Change",
+             trajectory <= -0.1 ~ "Shrinking",
+             trajectory >= 0.1 ~ "Growing",
+             TRUE ~ "No Significant Change"
+           ) %>% 
+           as.factor()
+         ) %>%
+  mutate(trajectory.discrete = fct_relevel(trajectory.discrete, 
+                                           c("Growing","No Significant Change","Shrinking"))) %>% 
+  # sf::st_transform(crs = "+proj=aea +lat_1=25 +lat_2=50 +lon_0=-100") %>% 
+  sf::st_cast("MULTIPOLYGON") %>%
+  plot_ly(split = ~county, 
+          color = ~trajectory.discrete, 
+          colors = "RdYlBu", 
+          span = I(1),
+          stroke = I("gray50"),
+          alpha = 1,
+          text = ~paste0("</br>", county, 
+                         "</br>Cases: ", cases, 
+                         "</br>New Cases (Last 7 Days): ", intensity, 
+                         "</br>Population: ", population, 
+                         "</br>Trajectory: ", scales::percent(trajectory.tool.tip, accuracy = 1),
+                         " (", trajectory.rank, " out of ", trajectory.out.of, ")",
+                         "</br>Trajectory Status: ", trajectory.discrete),
+          hoverinfo = "text",
+          hoveron = "fills", 
+          frame = ~date,
+          ids = ~county) %>% 
+  layout(title="",
+         showlegend = FALSE) %>%
+#   colorbar(title = "Cases per Thousand") %>% 
+  animation_opts(frame = 1000, transition = 0, redraw = FALSE, mode = "afterall") %>% 
+  animation_slider() %>%
+  config(displaylogo = FALSE)
+
+# fig_counties_trajectory
+
+```
+
+```{r dpi = 96}
+## US Metro Map (Cases)
+fig_regions_trajectory <- county %>% 
+  mutate(county = ifelse(county == "Fond Du Lac", "Fond du Lac", county),
+         county = ifelse(county == "St Croix", "St. Croix", county)) %>% 
+  left_join(wi_current, by = c("state", "county")) %>%
+  # left_join(county_population, by = c("state", "county")) %>% 
+  group_by(date, herc_region) %>% 
+  summarize(cases = sum(cases, na.rm = TRUE),
+            deaths = sum(deaths, na.rm = TRUE),
+            population = sum(population, na.rm = TRUE),
+            geometry = sf::st_union(sf::st_buffer(geometry,0.0))) %>% 
+  ungroup() %>% 
+  group_by(herc_region) %>% 
+  arrange(desc(date)) %>% 
+  mutate(cases = cummin(cases)) %>% 
+  arrange(date) %>% 
+  mutate(new.cases = cases - lag(cases, default = 0),
+         intensity = cases - lag(cases, n = 7, default = 0),
+         trajectory = (cases - lag(cases, n = 7, default = 0)) / ((lag(cases, n = 7, default = 0) - lag(cases, n = 14, default = 0))) - 1,
+         burden = (cases - lag(cases, n = 14, default = 0)) / (population / 100000),
+         intensity.1 = cases - lag(cases, n = 7, default = 0),
+         intensity.2 = cases - lag(cases, n = 14, default = 0),
+         p.value = pmap(.l = list(intensity.1, intensity.2), .f = function(intensity.1, intensity.2) poisson.test(c(intensity.1, intensity.2), c(1, 2))$p.value) %>% 
+           unlist()) %>% 
+  mutate(row = row_number()) %>% 
+  ungroup() %>% 
+  filter(between(date, MIN_DATE, MAX_DATE)) %>% 
+  mutate(trajectory = ifelse(is.infinite(trajectory) | is.nan(trajectory), NA, trajectory)) %>% 
+  group_by(date) %>% 
+  mutate(trajectory.rank = rank(-trajectory, na.last = "keep", ties.method = "min"),
+         trajectory.out.of = sum(!is.na(trajectory))) %>% 
+  ungroup() %>% 
+  mutate(trajectory.tool.tip = trajectory,
+         trajectory.discrete = 
+           case_when(
+             p.value >= 0.025 ~ "No Significant Change",
+             trajectory <= -0.1 ~ "Shrinking",
+             trajectory >= 0.1 ~ "Growing",
+             TRUE ~ "No Significant Change"
+           ) %>% 
+           as.factor()
+         ) %>%
+  mutate(trajectory.discrete = fct_relevel(trajectory.discrete, 
+                                           c("Growing","No Significant Change","Shrinking"))) %>% 
+  # sf::st_transform(crs = "+proj=aea +lat_1=25 +lat_2=50 +lon_0=-100") %>% 
+  sf::st_cast("MULTIPOLYGON") %>%
+  plot_ly(split = ~county, 
+          color = ~trajectory.discrete, 
+          colors = "RdYlBu", 
+          span = I(1),
+          stroke = I("gray50"),
+          alpha = 1,
+          text = ~paste0("</br>", county, 
+                         "</br>Cases: ", cases, 
+                         "</br>New Cases (Last 7 Days): ", intensity, 
+                         "</br>Population: ", population, 
+                         "</br>Trajectory: ", scales::percent(trajectory.tool.tip, accuracy = 1),
+                         " (", trajectory.rank, " out of ", trajectory.out.of, ")",
+                         "</br>Trajectory Status: ", trajectory.discrete),
+          hoverinfo = "text",
+          hoveron = "fills", 
+          frame = ~date,
+          ids = ~county) %>% 
+  layout(title="",
+         showlegend = FALSE) %>%
+#   colorbar(title = "Cases per Thousand") %>% 
+  animation_opts(frame = 1000, transition = 0, redraw = FALSE, mode = "afterall") %>% 
+  animation_slider() %>%
+  config(displaylogo = FALSE)
+
+# fig_regions_trajectory
+
+```
+
+```{r}
+subplot(fig_regions_trajectory, fig_counties_trajectory) %>% 
+  animation_opts(frame = 1000, transition = 0, redraw = FALSE, mode = "afterall") %>% 
+  animation_slider() %>%
+  config(displaylogo = FALSE)
+
+```
+
+### COVID-19 Activity Level
+
+```{r dpi = 96}
+## US Metro Map (Cases)
+fig_counties_activity <- county %>% 
+  mutate(county = ifelse(county == "Fond Du Lac", "Fond du Lac", county),
+         county = ifelse(county == "St Croix", "St. Croix", county)) %>% 
+  left_join(wi_current, by = c("state", "county")) %>% 
+  group_by(county) %>% 
+  arrange(date) %>% 
+  mutate(intensity.1 = cases - lag(cases, n = 7, default = 0),
+         intensity.2 = cases - lag(cases, n = 14, default = 0),
+         p.value = pmap(.l = list(intensity.1, intensity.2), .f = function(intensity.1, intensity.2) poisson.test(c(intensity.1, intensity.2), c(1, 2))$p.value) %>% 
+           unlist()) %>% 
+  ungroup() %>% 
+  filter(between(date, MIN_DATE, MAX_DATE)) %>% 
+  # left_join(county_population, by = c("state", "county")) %>% 
+  mutate(trajectory = ifelse(is.infinite(trajectory) | is.nan(trajectory), NA, trajectory)) %>% 
+  group_by(date) %>% 
+  mutate(burden.rank = rank(-burden, na.last = "keep", ties.method = "min"),
+         burden.out.of = sum(!is.na(burden))) %>% 
+  mutate(trajectory.rank = rank(-trajectory, na.last = "keep", ties.method = "min"),
+         trajectory.out.of = sum(!is.na(trajectory))) %>% 
+  ungroup() %>% 
+  mutate(burden.tool.tip = burden,
+         burden.discrete = cut(burden,
+                               c(-0.001, 10, 50, 100, 1000),
+                               c("Low","Moderate","Moderately High","High"))) %>%
+  mutate(trajectory.tool.tip = trajectory,
+         trajectory.discrete = 
+           case_when(
+             p.value >= 0.025 ~ "No Significant Change",
+             trajectory <= -0.1 ~ "Shrinking",
+             trajectory >= 0.1 ~ "Growing",
+             TRUE ~ "No Significant Change"
+           ) %>% 
+           as.factor()
+         ) %>%
+  mutate(activity.level = 
+           case_when(
+             burden.discrete == "Low" & trajectory.discrete == "Shrinking" ~ "Low",
+             burden.discrete == "Low" & trajectory.discrete == "No Significant Change" ~ "Low",
+             burden.discrete == "Low" & trajectory.discrete == "Growing" ~ "Medium",
+             burden.discrete == "Moderate" & trajectory.discrete == "Shrinking" ~ "Medium",
+             burden.discrete == "Moderate" & trajectory.discrete == "No Significant Change" ~ "Medium",
+             burden.discrete == "Moderate" & trajectory.discrete == "Growing" ~ "High",
+             burden.discrete == "Moderately High" & trajectory.discrete == "Shrinking" ~ "Medium",
+             burden.discrete == "Moderately High" & trajectory.discrete == "No Significant Change" ~ "High",
+             burden.discrete == "Moderately High" & trajectory.discrete == "Growing" ~ "High",
+             burden.discrete == "High" & trajectory.discrete == "Shrinking" ~ "High",
+             burden.discrete == "High" & trajectory.discrete == "No Significant Change" ~ "High",
+             burden.discrete == "High" & trajectory.discrete == "Growing" ~ "High"
+           )
+         ) %>% 
+  mutate(activity.level = fct_relevel(activity.level,
+                                      c("High","Medium","Low"))) %>%
+  # sf::st_transform(crs = "+proj=aea +lat_1=25 +lat_2=50 +lon_0=-100") %>% 
+  sf::st_cast("MULTIPOLYGON") %>%
+  plot_ly(split = ~county, 
+          color = ~activity.level, 
+          colors = "RdYlBu", 
+          span = I(1),
+          stroke = I("gray50"),
+          alpha = 1,
+          text = ~paste0("</br>", county, 
+                         "</br>Cases: ", cases, 
+                         "</br>New Cases (Last 7 Days): ", intensity, 
+                         "</br>Population: ", population, 
+                         "</br>Burden: ", round(burden.tool.tip, 3),
+                         " (", burden.rank, " out of ", burden.out.of, ")",
+                         "</br>Burden Status: ", burden.discrete, 
+                         "</br>Trajectory: ", scales::percent(trajectory.tool.tip, accuracy = 1),
+                         " (", trajectory.rank, " out of ", trajectory.out.of, ")",
+                         "</br>Trajectory Status: ", trajectory.discrete,
+                         "</br>Activity Level: ", activity.level),
+          hoverinfo = "text",
+          hoveron = "fills", 
+          frame = ~date,
+          ids = ~county) %>% 
+  layout(title="",
+         showlegend = FALSE) %>%
+#   colorbar(title = "Cases per Thousand") %>% 
+  animation_opts(frame = 1000, transition = 0, redraw = FALSE, mode = "afterall") %>% 
+  animation_slider() %>%
+  config(displaylogo = FALSE)
+
+# fig_counties_activity
+
+```
+
+```{r dpi = 96}
+## US Metro Map (Cases)
+fig_regions_activity <- county %>% 
+  mutate(county = ifelse(county == "Fond Du Lac", "Fond du Lac", county),
+         county = ifelse(county == "St Croix", "St. Croix", county)) %>% 
+  left_join(wi_current, by = c("state", "county")) %>%
+  # left_join(county_population, by = c("state", "county")) %>% 
+  group_by(date, herc_region) %>% 
+  summarize(cases = sum(cases, na.rm = TRUE),
+            deaths = sum(deaths, na.rm = TRUE),
+            population = sum(population, na.rm = TRUE),
+            geometry = sf::st_union(sf::st_buffer(geometry,0.0))) %>% 
+  ungroup() %>% 
+  group_by(herc_region) %>% 
+  arrange(desc(date)) %>% 
+  mutate(cases = cummin(cases)) %>% 
+  arrange(date) %>% 
+  mutate(new.cases = cases - lag(cases, default = 0),
+         intensity = cases - lag(cases, n = 7, default = 0),
+         trajectory = (cases - lag(cases, n = 7, default = 0)) / ((lag(cases, n = 7, default = 0) - lag(cases, n = 14, default = 0))) - 1,
+         burden = (cases - lag(cases, n = 14, default = 0)) / (population / 100000),
+         intensity.1 = cases - lag(cases, n = 7, default = 0),
+         intensity.2 = cases - lag(cases, n = 14, default = 0),
+         p.value = pmap(.l = list(intensity.1, intensity.2), .f = function(intensity.1, intensity.2) poisson.test(c(intensity.1, intensity.2), c(1, 2))$p.value) %>% 
+           unlist()) %>% 
+  mutate(row = row_number()) %>% 
+  ungroup() %>% 
+  filter(between(date, MIN_DATE, MAX_DATE)) %>% 
+  mutate(trajectory = ifelse(is.infinite(trajectory) | is.nan(trajectory), NA, trajectory)) %>% 
+  group_by(date) %>% 
+  mutate(burden.rank = rank(-burden, na.last = "keep", ties.method = "min"),
+         burden.out.of = sum(!is.na(burden))) %>% 
+  mutate(trajectory.rank = rank(-trajectory, na.last = "keep", ties.method = "min"),
+         trajectory.out.of = sum(!is.na(trajectory))) %>% 
+  ungroup() %>% 
+  mutate(burden.tool.tip = burden,
+         burden.discrete = cut(burden,
+                               c(-0.001, 10, 50, 100, 1000),
+                               c("Low","Moderate","Moderately High","High"))) %>%
+  mutate(trajectory.tool.tip = trajectory,
+         trajectory.discrete = 
+           case_when(
+             p.value >= 0.025 ~ "No Significant Change",
+             trajectory <= -0.1 ~ "Shrinking",
+             trajectory >= 0.1 ~ "Growing",
+             TRUE ~ "No Significant Change"
+           ) %>% 
+           as.factor()
+         ) %>%
+  mutate(activity.level = 
+           case_when(
+             burden.discrete == "Low" & trajectory.discrete == "Shrinking" ~ "Low",
+             burden.discrete == "Low" & trajectory.discrete == "No Significant Change" ~ "Low",
+             burden.discrete == "Low" & trajectory.discrete == "Growing" ~ "Medium",
+             burden.discrete == "Moderate" & trajectory.discrete == "Shrinking" ~ "Medium",
+             burden.discrete == "Moderate" & trajectory.discrete == "No Significant Change" ~ "Medium",
+             burden.discrete == "Moderate" & trajectory.discrete == "Growing" ~ "High",
+             burden.discrete == "Moderately High" & trajectory.discrete == "Shrinking" ~ "Medium",
+             burden.discrete == "Moderately High" & trajectory.discrete == "No Significant Change" ~ "High",
+             burden.discrete == "Moderately High" & trajectory.discrete == "Growing" ~ "High",
+             burden.discrete == "High" & trajectory.discrete == "Shrinking" ~ "High",
+             burden.discrete == "High" & trajectory.discrete == "No Significant Change" ~ "High",
+             burden.discrete == "High" & trajectory.discrete == "Growing" ~ "High"
+           )
+         ) %>% 
+  mutate(activity.level = fct_relevel(activity.level,
+                                      c("High","Medium","Low"))) %>%
+  # sf::st_transform(crs = "+proj=aea +lat_1=25 +lat_2=50 +lon_0=-100") %>% 
+  sf::st_cast("MULTIPOLYGON") %>%
+  plot_ly(split = ~county, 
+          color = ~activity.level, 
+          colors = "RdYlBu", 
+          span = I(1),
+          stroke = I("gray50"),
+          alpha = 1,
+          text = ~paste0("</br>", county, 
+                         "</br>Cases: ", cases, 
+                         "</br>New Cases (Last 7 Days): ", intensity, 
+                         "</br>Population: ", population, 
+                         "</br>Burden: ", round(burden.tool.tip, 3),
+                         " (", burden.rank, " out of ", burden.out.of, ")",
+                         "</br>Burden Status: ", burden.discrete, 
+                         "</br>Trajectory: ", scales::percent(trajectory.tool.tip, accuracy = 1),
+                         " (", trajectory.rank, " out of ", trajectory.out.of, ")",
+                         "</br>Trajectory Status: ", trajectory.discrete,
+                         "</br>Activity Level: ", activity.level),
+          hoverinfo = "text",
+          hoveron = "fills", 
+          frame = ~date,
+          ids = ~county) %>% 
+  layout(title="",
+         showlegend = FALSE) %>%
+#   colorbar(title = "Cases per Thousand") %>% 
+  animation_opts(frame = 1000, transition = 0, redraw = FALSE, mode = "afterall") %>% 
+  animation_slider() %>%
+  config(displaylogo = FALSE)
+
+# fig_regions_activity
+
+```
+
+```{r}
+subplot(fig_regions_activity, fig_counties_activity) %>% 
+  animation_opts(frame = 1000, transition = 0, redraw = FALSE, mode = "afterall") %>% 
+  animation_slider() %>%
+  config(displaylogo = FALSE)
+
+```
+
+#
+
+___These plots are interactive___: For the line plots, double click on a region in the legend to start a comparison or use the button at the bottom-right corner of the plot and then single click on others to add or remove them from the comparison. Note: double-clicking may not work well on all platforms, but you may single click on a region in the legend to remove from the comparison. For the map, use the button at the bottom-left corner of the plot to play animation or slider component to select timepoint.
+
+## Methodology
+
+### Case Indicators
+
+Burden (case rate) and trajectory (case change) indicators are based on confirmed COVID-19 cases. The COVID-19 activity level map combines burden and trajectory indicators based on if the  burden status is low, moderate, moderately high, or high and if trajectory status is significantly shrinking, growing, or have no statistically significant change. 
+
+### Burden
+(___Retrieved from [COVID-19: Activity Level by Region and County](https://www.dhs.wisconsin.gov/covid-19/local.htm)___)
+
+Burden is the total number of cases per 100,000 Wisconsin residents in the last two weeks.
+
+| Burden Status	  | Value (per 100,000 Wisconsin residents in the past two weeks) |
+| :-------------- | :------------------------------------------------------------ |
+| Low             | Case rate $\leq 10$                                           |
+| Moderate        | $10 <$ Case rate $\leq 50$                                    |
+| Moderately High | $50 <$ Case rate $\leq 100$                                   |
+| High	          | Case rate $> 50$                                              |
+
+### Trajectory
+(___Retrieved from [COVID-19: Activity Level by Region and County](https://www.dhs.wisconsin.gov/covid-19/local.htm)___)
+
+Trajectory is the percent change in the last two weeks and p-value (indicates statistical significance) from a test against the percent change equal to zero.
+
+| Trajectory Status	    | Value (change from prior 7-day period to most recent 7-day period) |
+| :-------------------- | :----------------------------------------------------------------- |
+| Shrinking             | Percent change in cases $\leq -10%$ and p-value $< 0.025$          |
+| Growing               | Percent change in cases $\geq 10%$ and p-value $ <0.025$           |
+| No Significant Change | Otherwise                                                          |
+
+### COVID-19 Activity Level
+(___Retrieved from [COVID-19: Activity Level by Region and County](https://www.dhs.wisconsin.gov/covid-19/local.htm)___)
+
+COVID-19 activity level is a summary indicator based on whether the burden (case rate) status is low, moderate, moderately high, or high and whether the trajectory (case change) status is significantly shrinking, growing, or have no statistically significant change.
+
+```{r}
+data_frame(`Burden Status` = c("Low", "Moderate", "Moderately High", "High"),
+           `Shrinking` = c("Low", "Medium", "Medium", "High"),
+           `No Significant Change` = c("Low", "Medium", "High", "High"),
+           `Growing` = c("Medium", "High", "High", "High")) %>% 
+  kable(escape = F) %>% 
+  kable_styling(full_width = F) %>%
+  add_header_above(c(" ", "Trajectory Status" = 3))
+
+
+```
+
+## Contact
+
+We encourage suggestions of new features and improvements to make the visualizations more useful.  The authors can be contacted below.
+
+- Srikanth Aravamuthan (<aravamuthan@wisc.edu>)
+- Steve Goldstein (<sgoldstein@wisc.edu>)
+- Sean Kent (<spkent@wisc.edu>)
+
+## References
+
+COVID-19: Activity Level by Region and County. <https://www.dhs.wisconsin.gov/covid-19/local.htm>.
+
+## Sources
+
+New York Times. New York Times database of U.S. coronavirus cases. 2020. Retrieved from <https://github.com/nytimes/covid-19-data>.
+
+United States Census Bureau, County Population Totals: 2010-2019. 2019. Retrieved from <https://www.census.gov/data/tables/time-series/demo/popest/2010s-counties-total.html>.
+
+<!-- United States Census Bureau, County Adjacency File. 2010. Retrieved from <https://www.census.gov/geographies/reference-files/2010/geo/county-adjacency.html>. -->
+
+<!-- ## Appendix: R Code -->
+
+```{r appendix, ref.label=knitr::all_labels(),echo=TRUE,eval=FALSE}
+```
