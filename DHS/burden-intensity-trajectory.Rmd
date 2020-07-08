@@ -127,37 +127,36 @@ process_data <- function(data, group_var) {
 
 ```
 
-# {.tabset .tabset-pills}
-
-___Work in Progress___: The following is a preliminary set of visualizations to track the burden, intensity, and trajectory of Healthcare Emergency Readiness Coalition (HERC) regions in Wisconsin. 
-
-## Burden versus Intensity {.tabset .tabset-pills}
-
-### HERC Regions Across Wisconsin (Last 4 Weeks)
 
 ```{r}
-df <- process_data(wi_regions, group_var = herc_region)
-
-fig1 <- 
+# Helper functions for creating visualizations
+standard_line_plot <- function(df, x, y, color) {
+  x <- as.formula(paste0("~", x))
+  y <- as.formula(paste0("~", y))
+  color <- as.formula(paste0("~", color))
+  color_pal <- "Spectral"
+  
   plot_ly(data = df,
-          x = ~burden,
-          y = ~intensity,
-          color = ~herc_region,
-          colors = "Spectral",
-          alpha = 0.7,
-          text = ~paste0("</br>", herc_region,
-                         "</br>", format(date, "%B %d, %Y"),
-                         "</br>New Cases (last 7 days): ", intensity,
-                         "</br>New Cases per 100k (last 14 days): ",
-                         round(burden, 1)),
-          type = "scatter",
-          mode = 'lines+markers',
-          hoverinfo = "text",
-          legendgroup = ~herc_region) %>% 
+            x = x,
+            y = y,
+            color = color,
+            colors = color_pal,
+            alpha = 0.7,
+            text = ~paste0("</br>", herc_region,
+                           "</br>", format(date, "%B %d, %Y"),
+                           "</br>New Cases (last 7 days): ", intensity,
+                           "</br>New Cases per 100k (last 14 days): ",
+                           round(burden, 1),
+                           "</br>Percent Case Change (last 2 weeks): ", 
+                           scales::percent(trajectory, accuracy = 0.1)),
+            type = "scatter",
+            mode = 'lines+markers',
+            hoverinfo = "text",
+            legendgroup = color) %>% 
   add_trace(data = df %>% 
               filter(date == max(date)),
-            color = ~herc_region,
-            colors = "Spectral",
+            color = color,
+            colors = color_pal,
             size = I(70),
             stroke = I("black"),
             symbol = I(24),
@@ -166,8 +165,8 @@ fig1 <-
             showlegend = FALSE) %>% 
   add_trace(data = df %>% 
               filter(date == max(date)-7),
-            color = ~herc_region,
-            colors = "Spectral",
+            color = color,
+            colors = color_pal,
             size = I(50),
             stroke = I("black"),
             symbol = I(24),
@@ -189,36 +188,60 @@ fig1 <-
             size = I(50),
             mode = "markers",
             name = "7 Days Ago",
-            legendgroup = "note") %>% 
-  layout(title = list(text = "",
-                      y = 1,
-                      x = 0.1,
-                      xanchor = "left")) %>% 
-  layout(xaxis = list(title = "Burden: New Cases per 100k (last 14 days)"),
-         yaxis = list(title = "Intensity: New Cases (last 7 days)")) %>% 
-  layout(updatemenus = 
-           list(
+            legendgroup = "note")
+}
+
+standard_layout <- function(p) {
+  p %>% 
+    layout(title = list(text = "",
+                        y = 1,
+                        x = 0.1,
+                        xanchor = "left")) %>% 
+    layout(updatemenus = 
              list(
-               type = "buttons",
-               direction = "right",
-               xanchor = "center",
-               yanchor = "top",
-               showactive = FALSE,
-               x = 1.1,
-               y = 0,
-               buttons = list(
-                 list(method = "restyle",
-                      args = list("visible", "all"),
-                      label = "show all"),
-                 list(method = "restyle",
-                      args = list("visible", "legendonly"),
-                      label = "hide all")
+               list(
+                 type = "buttons",
+                 direction = "right",
+                 xanchor = "center",
+                 yanchor = "top",
+                 showactive = FALSE,
+                 x = 1.1,
+                 y = 0,
+                 buttons = list(
+                   list(method = "restyle",
+                        args = list("visible", "all"),
+                        label = "show all"),
+                   list(method = "restyle",
+                        args = list("visible", "legendonly"),
+                        label = "hide all")
+                 )
                )
              )
-           )
-         ) %>% 
-  config(doubleClickDelay = 500) %>%
-  config(displaylogo = FALSE)
+    ) %>% 
+    config(doubleClickDelay = 500) %>%
+    config(displaylogo = FALSE)
+}
+
+```
+
+
+
+# {.tabset .tabset-pills}
+
+___Work in Progress___: The following is a preliminary set of visualizations to track the burden, intensity, and trajectory of Healthcare Emergency Readiness Coalition (HERC) regions in Wisconsin. 
+
+## Burden versus Intensity {.tabset .tabset-pills}
+
+### HERC Regions Across Wisconsin (Last 4 Weeks)
+
+```{r}
+df <- process_data(wi_regions, group_var = herc_region)
+
+fig1 <- 
+  standard_line_plot(df, "burden", "intensity", "herc_region") %>% 
+  standard_layout() %>% 
+  layout(xaxis = list(title = "Burden: New Cases per 100k (last 14 days)"),
+         yaxis = list(title = "Intensity: New Cases (last 7 days)")) 
 
 fig1
   
@@ -346,35 +369,9 @@ for(i in 1:length(regions)) {
               mode = "markers",
               name = "7 Days Ago",
               legendgroup = "note") %>% 
-    layout(title = list(text = paste0(regions[i], " Region"),
-                        y = 1,
-                        x = 0.1,
-                        xanchor = "left")) %>% 
+    standard_layout() %>% 
     layout(xaxis = list(title = "Burden: New Cases per 100k (last 14 days)"),
-           yaxis = list(title = "Intensity: New Cases (last 7 days)")) %>% 
-    layout(updatemenus = 
-             list(
-               list(
-                 type = "buttons",
-                 direction = "right",
-                 xanchor = "center",
-                 yanchor = "top",
-                 showactive = FALSE,
-                 x = 1.1,
-                 y = 0,
-                 buttons = list(
-                   list(method = "restyle",
-                        args = list("visible", "all"),
-                        label = "show all"),
-                   list(method = "restyle",
-                        args = list("visible", "legendonly"),
-                        label = "hide all")
-                 )
-               )
-             )
-    ) %>% 
-    config(doubleClickDelay = 500) %>%
-    config(displaylogo = FALSE)
+           yaxis = list(title = "Intensity: New Cases (last 7 days)")) 
   
   l[[i]] <- as_widget(fig2)
   
@@ -440,89 +437,12 @@ l[[7]]
 df <- process_data(wi_regions, group_var = herc_region)
 
 fig1 <- 
-  plot_ly(data = df,
-          x = ~burden,
-          y = ~trajectory,
-          color = ~herc_region,
-          colors = "Spectral",
-          alpha = 0.7,
-          text = ~paste0("</br>", herc_region,
-                         "</br>", format(date, "%B %d, %Y"),
-                         "</br>Percent Case Change (last 2 weeks): ", 
-                         scales::percent(trajectory, accuracy = 0.1),
-                         "</br>New Cases per 100k (last 14 days): ",
-                         round(burden, 1)),
-          type = "scatter",
-          mode = 'lines+markers',
-          hoverinfo = "text",
-          legendgroup = ~herc_region) %>% 
-  add_trace(data = df %>% 
-              filter(date == max(date)),
-            color = ~herc_region,
-            colors = "Spectral",
-            size = I(70),
-            stroke = I("black"),
-            symbol = I(24),
-            type = "scatter",
-            mode = "markers",
-            showlegend = FALSE) %>% 
-  add_trace(data = df %>% 
-              filter(date == max(date)-7),
-            color = ~herc_region,
-            colors = "Spectral",
-            size = I(50),
-            stroke = I("black"),
-            symbol = I(24),
-            type = "scatter",
-            mode = "markers",
-            showlegend = FALSE) %>% 
-  add_trace(x = Inf, y = Inf,
-            color = I("#377ab5"),
-            symbol = I(24),
-            stroke = I("black"),
-            size = I(70),
-            mode = "markers",
-            name = "Today",
-            legendgroup = "note") %>% 
-  add_trace(x = Inf, y = Inf,
-            color = I("#377ab5"),
-            symbol = I(24),
-            stroke = I("black"),
-            size = I(50),
-            mode = "markers",
-            name = "7 Days Ago",
-            legendgroup = "note") %>% 
-  layout(title = list(text = "",
-                      y = 1,
-                      x = 0.1,
-                      xanchor = "left")) %>% 
+  standard_line_plot(df, "burden", "trajectory", "herc_region") %>% 
+  standard_layout() %>% 
   layout(xaxis = list(title = "Burden: New Cases per 100k (last 14 days)"),
          yaxis = list(title = "Trajectory: Percent Case Change (last 2 weeks)",
-                      tickformat = "%")) %>% 
-  layout(updatemenus = 
-           list(
-             list(
-               type = "buttons",
-               direction = "right",
-               xanchor = "center",
-               yanchor = "top",
-               showactive = FALSE,
-               x = 1.1,
-               y = 0,
-               buttons = list(
-                 list(method = "restyle",
-                      args = list("visible", "all"),
-                      label = "show all"),
-                 list(method = "restyle",
-                      args = list("visible", "legendonly"),
-                      label = "hide all")
-               )
-             )
-           )
-         ) %>% 
-  config(doubleClickDelay = 500) %>%
-  config(displaylogo = FALSE)
-
+                      tickformat = "%"))
+  
 fig1
   
 ```
@@ -651,36 +571,10 @@ for(i in 1:length(regions)) {
               mode = "markers",
               name = "7 Days Ago",
               legendgroup = "note") %>% 
-    layout(title = list(text = paste0(regions[i], " Region"),
-                        y = 1,
-                        x = 0.1,
-                        xanchor = "left")) %>% 
+    standard_layout() %>% 
     layout(xaxis = list(title = "Burden: New Cases per 100k (last 14 days)"),
            yaxis = list(title = "Trajectory: Percent Case Change (last 2 weeks)",
-                        tickformat = "%")) %>% 
-    layout(updatemenus = 
-             list(
-               list(
-                 type = "buttons",
-                 direction = "right",
-                 xanchor = "center",
-                 yanchor = "top",
-                 showactive = FALSE,
-                 x = 1.1,
-                 y = 0,
-                 buttons = list(
-                   list(method = "restyle",
-                        args = list("visible", "all"),
-                        label = "show all"),
-                   list(method = "restyle",
-                        args = list("visible", "legendonly"),
-                        label = "hide all")
-                 )
-               )
-             )
-    ) %>% 
-    config(doubleClickDelay = 500) %>%
-    config(displaylogo = FALSE)
+                        tickformat = "%")) 
   
   l[[i]] <- as_widget(fig2)
   
