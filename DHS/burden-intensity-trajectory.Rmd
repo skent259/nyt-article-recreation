@@ -250,125 +250,17 @@ fig1
 ### Individual Regions (Last 4 Weeks) {.tabset .tabset-pills}
 
 ```{r}
-# region = "South Central"
 l <- htmltools::tagList()
 
-regions <- 
-  wi_counties %>% 
-  select(herc_region) %>% 
-  distinct() %>% 
-  pull()
-
-df.1 <- 
-  process_data(wi_regions, group_var = herc_region) %>% 
-  mutate(county = herc_region) %>% 
-  select(date, county, state, herc_region, cases, deaths, population, new.cases, intensity, trajectory, burden)
-
-df.2 <- 
-  process_data(wi_counties, group_var = county) %>% 
-  select(date, county, state, herc_region, cases, deaths, population, new.cases, intensity, trajectory, burden)
-
-df <- 
-  df.1 %>% 
-  bind_rows(df.2)
+regions <- unique(wi_counties$herc_region)
+  
+df <- process_data(wi_counties, group_var = county)
 
 for(i in 1:length(regions)) {
+  df_region <- filter(df, herc_region == regions[i])
+  
   fig2 <- 
-    plot_ly(data = df %>% 
-              filter(county == regions[i]),
-            x = ~burden,
-            y = ~intensity,
-            name = regions[i],
-            color = I("#377ab5"),
-            text = ~paste0("</br>", county,
-                           "</br>", format(date, "%B %d, %Y"),
-                           "</br>New Cases (last 7 days): ", intensity,
-                           "</br>New Cases per 100k (last 14 days): ",
-                           round(burden, 1)),
-            type = "scatter",
-            mode = 'lines+markers',
-            hoverinfo = "text",
-            legendgroup = ~county) %>% 
-    add_trace(data = df %>% 
-                filter(herc_region == regions[i],
-                       county != regions[i]),
-              inherit = FALSE,
-              x = ~burden,
-              y = ~intensity,
-              color = ~county,
-              colors = "Paired",
-              alpha = 0.7,
-              text = ~paste0("</br>", county,
-                             "</br>", format(date, "%B %d, %Y"),
-                             "</br>New Cases (last 7 days): ", intensity,
-                             "</br>New Cases per 100k (last 14 days): ",
-                             round(burden, 1)),
-              type = "scatter",
-              mode = 'lines+markers',
-              hoverinfo = "text",
-              legendgroup = ~county) %>% 
-    add_trace(data = df %>% 
-                filter(date == max(date),
-                       county == regions[i]),
-              name = regions[i],
-              color = I("#377ab5"),
-              size = I(70),
-              stroke = I("black"),
-              symbol = I(24),
-              type = "scatter",
-              mode = "markers",
-              showlegend = FALSE) %>% 
-    add_trace(data = df %>% 
-                filter(date == max(date)-7,
-                       county == regions[i]),
-              name = regions[i],
-              color = I("#377ab5"),
-              size = I(50),
-              stroke = I("black"),
-              symbol = I(24),
-              type = "scatter",
-              mode = "markers",
-              showlegend = FALSE) %>% 
-    add_trace(data = df %>% 
-                filter(date == max(date),
-                       herc_region == regions[i],
-                       county != regions[i]),
-              color = ~county,
-              colors = "Paired",
-              size = I(70),
-              stroke = I("black"),
-              symbol = I(24),
-              type = "scatter",
-              mode = "markers",
-              showlegend = FALSE) %>% 
-    add_trace(data = df %>% 
-                filter(date == max(date)-7,
-                       herc_region == regions[i],
-                       county != regions[i]),
-              color = ~county,
-              colors = "Paired",
-              size = I(50),
-              stroke = I("black"),
-              symbol = I(24),
-              type = "scatter",
-              mode = "markers",
-              showlegend = FALSE) %>% 
-    add_trace(x = Inf, y = Inf,
-              color = I("#377ab5"),
-              symbol = I(24),
-              stroke = I("black"),
-              size = I(70),
-              mode = "markers",
-              name = "Today",
-              legendgroup = "note") %>% 
-    add_trace(x = Inf, y = Inf,
-              color = I("#377ab5"),
-              symbol = I(24),
-              stroke = I("black"),
-              size = I(50),
-              mode = "markers",
-              name = "7 Days Ago",
-              legendgroup = "note") %>% 
+    standard_line_plot(df_region, "burden", "intensity", "county") %>% 
     standard_layout() %>% 
     layout(xaxis = list(title = "Burden: New Cases per 100k (last 14 days)"),
            yaxis = list(title = "Intensity: New Cases (last 7 days)")) 
@@ -450,131 +342,22 @@ fig1
 ### Individual Regions (Last 4 Weeks) {.tabset .tabset-pills}
 
 ```{r}
-# region = "South Central"
 l <- htmltools::tagList()
 
-regions <- 
-  wi_counties %>% 
-  select(herc_region) %>% 
-  distinct() %>% 
-  pull()
-
-df.1 <- 
-  process_data(wi_regions, group_var = herc_region) %>% 
-  mutate(county = herc_region) %>% 
-  select(date, county, state, herc_region, cases, deaths, population, new.cases, intensity, trajectory, burden)
-
-df.2 <- 
-  process_data(wi_counties, group_var = county) %>% 
-  select(date, county, state, herc_region, cases, deaths, population, new.cases, intensity, trajectory, burden)
-
-df <- 
-  df.1 %>% 
-  bind_rows(df.2)
+regions <- unique(wi_counties$herc_region)
+  
+df <- process_data(wi_counties, group_var = county)
 
 for(i in 1:length(regions)) {
+  
+  df_region <- filter(df, herc_region == regions[i])
+  
   fig2 <- 
-    plot_ly(data = df %>% 
-              filter(county == regions[i]),
-            x = ~burden,
-            y = ~trajectory,
-            name = regions[i],
-            color = I("#377ab5"),
-            text = ~paste0("</br>", county,
-                           "</br>", format(date, "%B %d, %Y"),
-                           "</br>Percent Case Change (last 2 weeks): ",
-                           scales::percent(trajectory, accuracy = 0.1),
-                           "</br>New Cases per 100k (last 14 days): ",
-                           round(burden, 1)),
-            type = "scatter",
-            mode = 'lines+markers',
-            hoverinfo = "text",
-            legendgroup = ~county) %>% 
-    add_trace(data = df %>% 
-                filter(herc_region == regions[i],
-                       county != regions[i]),
-              inherit = FALSE,
-              x = ~burden,
-              y = ~trajectory,
-              color = ~county,
-              colors = "Paired",
-              alpha = 0.7,
-              text = ~paste0("</br>", county,
-                             "</br>", format(date, "%B %d, %Y"),
-                             "</br>Percent Case Change (last 2 weeks): ",
-                             scales::percent(trajectory, accuracy = 0.1),
-                             "</br>New Cases per 100k (last 14 days): ",
-                             round(burden, 1)),
-              type = "scatter",
-              mode = 'lines+markers',
-              hoverinfo = "text",
-              legendgroup = ~county) %>% 
-    add_trace(data = df %>% 
-                filter(date == max(date),
-                       county == regions[i]),
-              name = regions[i],
-              color = I("#377ab5"),
-              size = I(70),
-              stroke = I("black"),
-              symbol = I(24),
-              type = "scatter",
-              mode = "markers",
-              showlegend = FALSE) %>% 
-    add_trace(data = df %>% 
-                filter(date == max(date)-7,
-                       county == regions[i]),
-              name = regions[i],
-              color = I("#377ab5"),
-              size = I(50),
-              stroke = I("black"),
-              symbol = I(24),
-              type = "scatter",
-              mode = "markers",
-              showlegend = FALSE) %>% 
-    add_trace(data = df %>% 
-                filter(date == max(date),
-                       herc_region == regions[i],
-                       county != regions[i]),
-              color = ~county,
-              colors = "Paired",
-              size = I(70),
-              stroke = I("black"),
-              symbol = I(24),
-              type = "scatter",
-              mode = "markers",
-              showlegend = FALSE) %>% 
-    add_trace(data = df %>% 
-                filter(date == max(date)-7,
-                       herc_region == regions[i],
-                       county != regions[i]),
-              color = ~county,
-              colors = "Paired",
-              size = I(50),
-              stroke = I("black"),
-              symbol = I(24),
-              type = "scatter",
-              mode = "markers",
-              showlegend = FALSE) %>% 
-    add_trace(x = Inf, y = Inf,
-              color = I("#377ab5"),
-              symbol = I(24),
-              stroke = I("black"),
-              size = I(70),
-              mode = "markers",
-              name = "Today",
-              legendgroup = "note") %>% 
-    add_trace(x = Inf, y = Inf,
-              color = I("#377ab5"),
-              symbol = I(24),
-              stroke = I("black"),
-              size = I(50),
-              mode = "markers",
-              name = "7 Days Ago",
-              legendgroup = "note") %>% 
+    standard_line_plot(df_region, "burden", "trajectory", "county") %>% 
     standard_layout() %>% 
     layout(xaxis = list(title = "Burden: New Cases per 100k (last 14 days)"),
            yaxis = list(title = "Trajectory: Percent Case Change (last 2 weeks)",
-                        tickformat = "%")) 
+                        tickformat = "%"))
   
   l[[i]] <- as_widget(fig2)
   
