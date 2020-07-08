@@ -135,6 +135,7 @@ standard_line_plot <- function(df, x, y, color) {
   y_f <- as.formula(paste0("~", y))
   color_f <- as.formula(paste0("~", color))
   color_pal <- "Spectral"
+  plot_symbol <- I(23)
   
   plot_ly(data = df,
             x = x_f,
@@ -159,7 +160,7 @@ standard_line_plot <- function(df, x, y, color) {
             colors = color_pal,
             size = I(70),
             stroke = I("black"),
-            symbol = I(24),
+            symbol = plot_symbol,
             type = "scatter",
             mode = "markers",
             showlegend = FALSE) %>% 
@@ -169,13 +170,13 @@ standard_line_plot <- function(df, x, y, color) {
             colors = color_pal,
             size = I(50),
             stroke = I("black"),
-            symbol = I(24),
+            symbol = plot_symbol,
             type = "scatter",
             mode = "markers",
             showlegend = FALSE) %>% 
   add_trace(x = Inf, y = Inf,
             color = I("#377ab5"),
-            symbol = I(24),
+            symbol = plot_symbol,
             stroke = I("black"),
             size = I(70),
             mode = "markers",
@@ -183,7 +184,7 @@ standard_line_plot <- function(df, x, y, color) {
             legendgroup = "note") %>% 
   add_trace(x = Inf, y = Inf,
             color = I("#377ab5"),
-            symbol = I(24),
+            symbol = plot_symbol,
             stroke = I("black"),
             size = I(50),
             mode = "markers",
@@ -1174,6 +1175,12 @@ data_frame(`Burden Status` = c("Low", "Moderate", "Moderately High", "High"),
            `Shrinking` = c("Low", "Medium", "Medium", "High"),
            `No Significant Change` = c("Low", "Medium", "High", "High"),
            `Growing` = c("Medium", "High", "High", "High")) %>% 
+  mutate_at(vars(`Shrinking`, `No Significant Change`, `Growing`),
+            ~cell_spec(.x,
+                       background = case_when(.x == "Low" ~ "#4575b4",
+                                              .x == "Medium" ~ "#fee090",
+                                              .x == "High" ~ "#d73027",
+                                              TRUE ~ "#d73027"))) %>%
   kable(escape = F) %>% 
   kable_styling(full_width = F) %>%
   add_header_above(c(" ", "Trajectory Status" = 3))
