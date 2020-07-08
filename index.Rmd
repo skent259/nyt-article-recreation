@@ -175,23 +175,23 @@ wi_metro_areas <-
 
 ```
 
-```{r cds-data-world}
-## Data from Corona Data Scraper on Lombardy and Hubei regions
-temp <- tempfile()
-download.file("https://coronadatascraper.com/timeseries-tidy.csv.zip", temp)
+<!-- ```{r cds-data-world} -->
+<!-- ## Data from Corona Data Scraper on Lombardy and Hubei regions -->
+<!-- temp <- tempfile() -->
+<!-- download.file("https://coronadatascraper.com/timeseries-tidy.csv.zip", temp) -->
 
-other_metroarea <-
-  read.csv(unz(temp, "timeseries-tidy.csv")) %>% 
-  # read.csv("https://coronadatascraper.com/timeseries-tidy.csv") %>% 
-  as_tibble() %>% 
-  filter((country == "Italy" & state == "Lombardy") | (country == "China" & state == "Hubei"),
-         type %in% c("cases", "deaths")) %>% 
-  pivot_wider(names_from = "type",
-              values_from = "value") %>% 
-  mutate(metro_name = name) %>% 
-  select(metro = name, date, cases, deaths, population, metro_name) 
+<!-- other_metroarea <- -->
+<!--   read.csv(unz(temp, "timeseries-tidy.csv")) %>%  -->
+<!--   # read.csv("https://coronadatascraper.com/timeseries-tidy.csv") %>%  -->
+<!--   as_tibble() %>%  -->
+<!--   filter((country == "Italy" & state == "Lombardy") | (country == "China" & state == "Hubei"), -->
+<!--          type %in% c("cases", "deaths")) %>%  -->
+<!--   pivot_wider(names_from = "type", -->
+<!--               values_from = "value") %>%  -->
+<!--   mutate(metro_name = name) %>%  -->
+<!--   select(metro = name, date, cases, deaths, population, metro_name)  -->
 
-```
+<!-- ``` -->
 
 ## Summary
 
@@ -235,8 +235,7 @@ To assess the possible future of the outbreak, it’s helpful to look not just a
 ```{r dpi = 96}
 ## Daily growth rate chart
 plot_data <-
-  rbind(us_metroarea,
-        other_metroarea) %>% 
+  us_metroarea %>% 
   filter(!is.na(metro_name)) %>% 
   group_by(metro) %>% 
   nest() %>% 
@@ -315,8 +314,7 @@ This measurement shows whether a community has succeeded in slowing the rate of 
 ```{r dpi = 96}
 ## Growth Rates by Case Count
 plot_data <-
-  rbind(us_metroarea,
-        other_metroarea) %>% 
+  us_metroarea %>% 
   filter(!is.na(metro_name)) %>% 
   group_by(metro) %>% 
   nest() %>% 
@@ -405,7 +403,7 @@ fig3 <- county %>%
          cases.per.1000 = ifelse(cases.per.1000<=0.025, NA, cases.per.1000),
          cases.per.1000 = ifelse(metro=="Rest of United States", NA, cases.per.1000)) %>% 
   mutate(cases.per.1000 = cut(cases.per.1000,
-                              c(min(cases.per.1000, na.rm = TRUE), 0.25, 0.5, 1, 2.5, 5, 10, max(cases.per.1000, na.rm = TRUE)))) %>%
+                              unique(c(min(cases.per.1000, na.rm = TRUE), 0.25, 0.5, 1, 2.5, 5, 10, max(cases.per.1000, na.rm = TRUE))))) %>%
   sf::st_transform(crs = "+proj=aea +lat_1=25 +lat_2=50 +lon_0=-100") %>% 
   sf::st_cast("MULTIPOLYGON") %>%
   plot_ly(split = ~metro, 
@@ -454,7 +452,7 @@ fig4 <- county %>%
          deaths.per.1000 = ifelse(deaths.per.1000<=0.001, NA, deaths.per.1000),
          deaths.per.1000 = ifelse(metro=="Rest of United States", NA, deaths.per.1000)) %>% 
   mutate(deaths.per.1000 = cut(deaths.per.1000,
-                               c(min(deaths.per.1000, na.rm = TRUE), 0.005, 0.01, 0.025, 0.05, 0.1, 0.2, max(deaths.per.1000, na.rm = TRUE)))) %>%
+                               c(0, 0.005, 0.01, 0.025, 0.05, 0.1, 0.2, max(deaths.per.1000, na.rm = TRUE)))) %>%
   sf::st_transform(crs = "+proj=aea +lat_1=25 +lat_2=50 +lon_0=-100") %>% 
   sf::st_cast("MULTIPOLYGON") %>%
   plot_ly(split = ~metro, 
