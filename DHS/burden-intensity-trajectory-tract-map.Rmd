@@ -1,0 +1,374 @@
+---
+title: "Burden, Intensity, Trajectory of Coronavirus in Wisconsin"
+subtitle: "by Census Tracts"
+# author: "Srikanth Aravamuthan & Sean Kent"
+date: "Updated `r format(Sys.time(), '%B %d, %Y, %I:00 %p %Z')`"
+output: 
+  html_document:
+    code_folding: hide
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = FALSE,
+  # cache = TRUE, 
+  message = FALSE,
+  warning = FALSE, 
+  fig.width = 10
+)
+
+library(openxlsx)
+library(tigris)
+
+library(tidyverse)
+library(purrr)
+library(lubridate)
+# library(readxl)
+# library(maps)
+library(sf)
+library(plotly)
+# library(shiny)
+
+# library(maptools)
+library(rgeos)
+
+library(knitr)
+library(kableExtra)
+
+```
+
+
+
+```{r data choices}
+## Data choices
+MIN_CASES_TO_PLOT <- 30
+MIN_DATE <- Sys.Date() - 28 # last 4 weeks
+MAX_DATE <- Sys.Date()
+
+```
+
+
+
+___Work in Progress___: The following is a preliminary set of visualizations to track the burden, intensity, and trajectory of Healthcare Emergency Readiness Coalition (HERC) regions in Wisconsin. 
+
+## {.tabset .tabset-pills}
+
+```{r results='hide'}
+df <- read.csv("https://opendata.arcgis.com/datasets/b913e9591eae4912b33dc5b4e88646c5_10.csv",
+               # na.strings = "-999",
+               stringsAsFactors = FALSE) %>% 
+  filter(GEO == "Census tract") %>% 
+  select(GEOID, LoadDttm:POSITIVE) %>% 
+  mutate(NEGATIVE = ifelse(NEGATIVE == -999, 0, NEGATIVE),
+         POSITIVE = ifelse(POSITIVE == -999, 0, POSITIVE)) %>% 
+  mutate(LoadDttm = date(ymd_hms(LoadDttm))) %>% 
+  rename(date = "LoadDttm")
+
+df.population <- openxlsx::read.xlsx("http://www2.census.gov/programs-surveys/decennial/tables/time-series/tract-change-00-10/censustract-00-10.xlsx") %>% 
+  filter(ST10 == "55") %>% 
+  rename(population = POP10) %>% 
+  select(GEOID, population)
+
+tract <- tigris::tracts("WI", cb = TRUE, class = "sf") %>% 
+  select(GEOID, geometry)
+
+wi_current <-
+  df %>%
+  left_join(df.population, by = "GEOID") %>% 
+  group_by(GEOID) %>%
+  arrange(desc(date)) %>%
+  mutate(NEGATIVE = cummin(NEGATIVE)) %>% 
+  mutate(POSITIVE = cummin(POSITIVE)) %>% 
+  mutate(tests = NEGATIVE + POSITIVE,
+         cases = POSITIVE) %>% 
+  arrange(date) %>%
+  mutate(new.cases = cases - lag(cases, default = 0)) %>%
+  mutate(intensity = cases - lag(cases, n = 7, default = 0)) %>%
+  mutate(trajectory = (cases - lag(cases, n = 7, default = 0)) / ((lag(cases, n = 7, default = 0) - lag(cases, n = 14, default = 0))) - 1) %>%
+  mutate(burden = (cases - lag(cases, n = 14, default = 0)) / (population / 100000)) %>%
+  mutate(row = row_number()) %>%
+  ungroup()
+
+```
+
+```{r}
+df_tracts_all <- 
+  tract %>% 
+  left_join(wi_current, by = "GEOID") %>% 
+  group_by(GEOID) %>%
+  arrange(date) %>%
+  mutate(intensity.1 = cases - lag(cases, n = 7, default = 0),
+         intensity.2 = cases - lag(cases, n = 14, default = 0),
+         p.value = pmap(.l = list(intensity.1, intensity.2), .f = function(intensity.1, intensity.2) poisson.test(c(intensity.1, intensity.2), c(1, 2))$p.value) %>%
+           unlist()) %>%
+  ungroup() %>%
+  filter(between(date, MIN_DATE, MAX_DATE)) %>%
+  mutate(trajectory = ifelse(is.infinite(trajectory) | is.nan(trajectory), NA, trajectory),
+         burden = ifelse(is.nan(burden), NA, burden)) %>%
+  group_by(date) %>%
+  mutate(burden.rank = rank(-burden, na.last = "keep", ties.method = "min"),
+         burden.out.of = sum(!is.na(burden))) %>%
+  mutate(trajectory.rank = rank(-trajectory, na.last = "keep", ties.method = "min"),
+         trajectory.out.of = sum(!is.na(trajectory))) %>%
+  ungroup() %>%
+  mutate(burden.tool.tip = burden,
+         burden.discrete = cut(burden,
+                               c(-0.001, 10, 50, 100, Inf),
+                               c("Low","Moderate","Moderately High","High"))) %>%
+  mutate(burden.discrete = fct_relevel(burden.discrete,
+                                       c("High","Moderately High","Moderate","Low"))) %>%
+  mutate(trajectory.tool.tip = trajectory,
+         trajectory.discrete =
+           case_when(
+             p.value >= 0.025 ~ "No Significant Change",
+             trajectory <= -0.1 ~ "Shrinking",
+             trajectory >= 0.1 ~ "Growing",
+             TRUE ~ "No Significant Change"
+           ) %>%
+           as.factor()
+         ) %>%
+  mutate(trajectory.discrete = fct_relevel(trajectory.discrete,
+                                           c("Growing","No Significant Change","Shrinking"))) %>%
+  mutate(activity.level =
+           case_when(
+             burden.discrete == "Low" & trajectory.discrete == "Shrinking" ~ "Low",
+             burden.discrete == "Low" & trajectory.discrete == "No Significant Change" ~ "Low",
+             burden.discrete == "Low" & trajectory.discrete == "Growing" ~ "Medium",
+             burden.discrete == "Moderate" & trajectory.discrete == "Shrinking" ~ "Medium",
+             burden.discrete == "Moderate" & trajectory.discrete == "No Significant Change" ~ "Medium",
+             burden.discrete == "Moderate" & trajectory.discrete == "Growing" ~ "High",
+             burden.discrete == "Moderately High" & trajectory.discrete == "Shrinking" ~ "Medium",
+             burden.discrete == "Moderately High" & trajectory.discrete == "No Significant Change" ~ "High",
+             burden.discrete == "Moderately High" & trajectory.discrete == "Growing" ~ "High",
+             burden.discrete == "High" & trajectory.discrete == "Shrinking" ~ "High",
+             burden.discrete == "High" & trajectory.discrete == "No Significant Change" ~ "High",
+             burden.discrete == "High" & trajectory.discrete == "Growing" ~ "High"
+           )
+         ) %>%
+  mutate(activity.level = fct_relevel(activity.level,
+                                      c("High","Medium","Low"))) %>%
+  filter(date == max(date, na.rm = TRUE)) %>%
+  # sf::st_transform(crs = "+proj=aea +lat_1=25 +lat_2=50 +lon_0=-100") %>%
+  sf::st_cast("MULTIPOLYGON")
+
+```
+
+
+### Burden {.tabset .tabset-pills}
+
+```{r}
+fig_tracts_burden <- 
+  df_tracts_all %>%
+  plot_ly(split = ~GEOID,
+          color = ~burden.discrete,
+          colors = "RdYlBu",
+          span = I(1),
+          stroke = I("gray50"),
+          alpha = 1,
+          text = ~paste0("</br>", GEOID,
+                         "</br>Cases: ", cases,
+                         "</br>New Cases (Last 7 Days): ", intensity,
+                         "</br>Population: ", population,
+                         "</br>Burden: ", round(burden.tool.tip, 3),
+                         " (", burden.rank, " out of ", burden.out.of, ")",
+                         "</br>Burden Status: ", burden.discrete),
+          # frame = ~date,
+          # ids = ~GEOID,
+          hoverinfo = "text",
+          hoveron = "fills",
+          showlegend = FALSE) %>%
+  layout(title="",
+         showlegend = FALSE) %>%
+#   colorbar(title = "Cases per Thousand") %>%
+  # animation_opts(frame = 1000, transition = 0, redraw = FALSE, mode = "afterall") %>%
+  # animation_slider() %>%
+  config(displaylogo = FALSE)
+
+fig_tracts_burden
+
+```
+
+
+### Trajectory {.tabset .tabset-pills}
+
+```{r}
+fig_tracts_trajectory <- 
+  df_tracts_all %>%
+  plot_ly(split = ~GEOID,
+          color = ~trajectory.discrete,
+          colors = "RdYlBu",
+          span = I(1),
+          stroke = I("gray50"),
+          alpha = 1,
+          text = ~paste0("</br>", GEOID,
+                         "</br>Cases: ", cases,
+                         "</br>New Cases (Last 7 Days): ", intensity,
+                         "</br>Population: ", population,
+                         "</br>Trajectory: ", scales::percent(trajectory.tool.tip, accuracy = 1),
+                         " (", trajectory.rank, " out of ", trajectory.out.of, ")",
+                         "</br>Trajectory Status: ", trajectory.discrete),
+          # frame = ~date,
+          # ids = ~GEOID,
+          hoverinfo = "text",
+          hoveron = "fills",
+          showlegend = FALSE) %>%
+  layout(title="",
+         showlegend = FALSE) %>%
+#   colorbar(title = "Cases per Thousand") %>%
+  # animation_opts(frame = 1000, transition = 0, redraw = FALSE, mode = "afterall") %>%
+  # animation_slider() %>%
+  config(displaylogo = FALSE)
+
+fig_tracts_trajectory
+
+```
+
+
+### COVID-19 Activity Level {.tabset .tabset-pills}
+
+```{r}
+fig_tracts_activity <- 
+  df_tracts_all %>% 
+  plot_ly(split = ~GEOID,
+          color = ~activity.level,
+          colors = "RdYlBu",
+          span = I(1),
+          stroke = I("gray50"),
+          alpha = 1,
+          text = ~paste0("</br>", GEOID,
+                         "</br>Cases: ", cases,
+                         "</br>New Cases (Last 7 Days): ", intensity,
+                         "</br>Population: ", population,
+                         "</br>Burden: ", round(burden.tool.tip, 3),
+                         " (", burden.rank, " out of ", burden.out.of, ")",
+                         "</br>Burden Status: ", burden.discrete,
+                         "</br>Trajectory: ", scales::percent(trajectory.tool.tip, accuracy = 1),
+                         " (", trajectory.rank, " out of ", trajectory.out.of, ")",
+                         "</br>Trajectory Status: ", trajectory.discrete,
+                         "</br>Activity Level: ", activity.level),
+          # frame = ~date,
+          # ids = ~GEOID,
+          hoverinfo = "text",
+          hoveron = "fills",
+          showlegend = FALSE) %>%
+  layout(title="",
+         showlegend = FALSE) %>%
+#   colorbar(title = "Cases per Thousand") %>%
+  # animation_opts(frame = 1000, transition = 0, redraw = FALSE, mode = "afterall") %>%
+  # animation_slider() %>%
+  config(displaylogo = FALSE)
+
+fig_tracts_activity
+
+```
+
+#
+
+___These plots are interactive___: For the line plots, double click on a region in the legend to start a comparison or use the button at the bottom-right corner of the plot and then single click on others to add or remove them from the comparison. Note: double-clicking may not work well on all platforms, but you may single click on a region in the legend to remove from the comparison. For the map, use the button at the bottom-left corner of the plot to play animation or slider component to select timepoint.
+
+## Methodology
+
+### Case Indicators
+
+Burden (case rate) and trajectory (case change) indicators are based on confirmed COVID-19 cases. The COVID-19 activity level map combines burden and trajectory indicators based on if the  burden status is low, moderate, moderately high, or high and if trajectory status is significantly shrinking, growing, or have no statistically significant change. 
+
+### Burden
+(___Retrieved from [COVID-19: Activity Level by Region and County](https://www.dhs.wisconsin.gov/covid-19/local.htm)___)
+
+Burden is the total number of cases per 100,000 Wisconsin residents in the last two weeks.
+
+<!-- | Burden Status	  | Value (per 100,000 Wisconsin residents in the past two weeks) | -->
+<!-- | :-------------- | :------------------------------------------------------------ | -->
+<!-- | Low             | Case rate $\leq 10$                                           | -->
+<!-- | Moderate        | $10 <$ Case rate $\leq 50$                                    | -->
+<!-- | Moderately High | $50 <$ Case rate $\leq 100$                                   | -->
+<!-- | High	          | Case rate $> 50$                                              | -->
+
+```{r}
+data_frame(`Burden Status` = c("Low", "Moderate", "Moderately High", "High"),
+           `Value (per 100,000 Wisconsin residents in the past two weeks)` = c("Case rate $\\leq 10$", "$10 <$ Case rate $\\leq 50$","$50 <$ Case rate $\\leq 100$","Case rate $> 50$")) %>% 
+  mutate_at(vars(`Burden Status`),
+            ~cell_spec(.x,
+                       background = case_when(.x == "Low" ~ "#2C7BB6",
+                                              .x == "Moderate" ~ "#ABD9E9",
+                                              .x == "Moderately High" ~ "#FDAE61",
+                                              .x == "High" ~ "#D7191C",
+                                              TRUE ~ "#cccccc"))) %>%
+  kable(escape = F) %>% 
+  kable_styling(full_width = F)
+
+```
+
+### Trajectory
+(___Retrieved from [COVID-19: Activity Level by Region and County](https://www.dhs.wisconsin.gov/covid-19/local.htm)___)
+
+Trajectory is the percent change in the last two weeks and p-value (indicates statistical significance) from a test against the percent change equal to zero.
+
+<!-- | Trajectory Status	    | Value (change from prior 7-day period to most recent 7-day period) | -->
+<!-- | :-------------------- | :----------------------------------------------------------------- | -->
+<!-- | Shrinking             | Percent change in cases $\leq -10%$ and p-value $< 0.025$          | -->
+<!-- | Growing               | Percent change in cases $\geq 10%$ and p-value $< 0.025$           | -->
+<!-- | No Significant Change | Otherwise                                                          | -->
+
+```{r}
+data_frame(`Trajectory Status` = c("Shrinking", "Growing", "No Significant Change"),
+           `Value (change from prior 7-day period to most recent 7-day period)` = c("Percent change in cases $\\leq -10\\%$ and p-value $< 0.025$", "Percent change in cases $\\geq 10\\%$ and p-value $< 0.025$", "Otherwise")) %>% 
+  mutate_at(vars(`Trajectory Status`),
+            ~cell_spec(.x,
+                       background = case_when(.x == "Shrinking" ~ "#4575b4",
+                                              .x == "Growing" ~ "#fee090",
+                                              .x == "No Significant Change" ~ "#d73027",
+                                              TRUE ~ "#cccccc"))) %>%
+  kable(escape = F) %>% 
+  kable_styling(full_width = F)
+
+```
+
+### COVID-19 Activity Level
+(___Retrieved from [COVID-19: Activity Level by Region and County](https://www.dhs.wisconsin.gov/covid-19/local.htm)___)
+
+COVID-19 activity level is a summary indicator based on whether the burden (case rate) status is low, moderate, moderately high, or high and whether the trajectory (case change) status is significantly shrinking, growing, or have no statistically significant change.
+
+```{r}
+data_frame(`Burden Status` = c("Low", "Moderate", "Moderately High", "High"),
+           `Shrinking` = c("Low", "Medium", "Medium", "High"),
+           `No Significant Change` = c("Low", "Medium", "High", "High"),
+           `Growing` = c("Medium", "High", "High", "High")) %>% 
+  mutate_at(vars(`Shrinking`, `No Significant Change`, `Growing`),
+            ~cell_spec(.x,
+                       background = case_when(.x == "Low" ~ "#4575b4",
+                                              .x == "Medium" ~ "#fee090",
+                                              .x == "High" ~ "#d73027",
+                                              TRUE ~ "#cccccc"))) %>%
+  kable(escape = F) %>% 
+  kable_styling(full_width = F) %>%
+  add_header_above(c(" ", "Trajectory Status" = 3))
+
+```
+
+## Contact
+
+We encourage suggestions of new features and improvements to make the visualizations more useful.  The authors can be contacted below.
+
+- Srikanth Aravamuthan (<aravamuthan@wisc.edu>)
+- Steve Goldstein (<sgoldstein@wisc.edu>)
+- Sean Kent (<spkent@wisc.edu>)
+
+## References
+
+COVID-19: Activity Level by Region and County. <https://www.dhs.wisconsin.gov/covid-19/local.htm>.
+
+## Sources
+
+Wisconsin Department of Health Services | DHS_GIS, COVID-19 Historical Data Table. 2020. Retrieved from <https://hub.arcgis.com/datasets/wi-dhs::covid-19-data-by-census-tract>.
+
+United States Census Bureau, 2000 to 2010 Census Tract Population Change. 2010. Retrieved from <https://www.census.gov/data/tables/time-series/dec/metro-micro/tract-change-00-10.html>.
+
+United States Census Bureau, Census Tracts TIGER/Line Shapefiles. 2017. Retrieved from <https://www.census.gov/geographies/mapping-files/time-series/geo/tiger-line-file.html>.
+
+<!-- ## Appendix: R Code -->
+
+```{r appendix, ref.label=knitr::all_labels(),echo=TRUE,eval=FALSE}
+```
+
+
