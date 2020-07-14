@@ -1180,11 +1180,11 @@ Burden is the total number of cases per 100,000 Wisconsin residents in the last 
 <!-- | Low             | Case rate $\leq 10$                                           | -->
 <!-- | Moderate        | $10 <$ Case rate $\leq 50$                                    | -->
 <!-- | Moderately High | $50 <$ Case rate $\leq 100$                                   | -->
-<!-- | High	          | Case rate $> 50$                                              | -->
+<!-- | High	          | Case rate $> 100$                                              | -->
 
 ```{r}
 data_frame(`Burden Status` = c("Low", "Moderate", "Moderately High", "High"),
-           `Value (per 100,000 Wisconsin residents in the past two weeks)` = c("Case rate $\\leq 10$", "$10 <$ Case rate $\\leq 50$","$50 <$ Case rate $\\leq 100$","Case rate $> 50$")) %>% 
+           `Value (per 100,000 Wisconsin residents in the past two weeks)` = c("Case rate $\\leq 10$", "$10 <$ Case rate $\\leq 50$","$50 <$ Case rate $\\leq 100$","Case rate $> 100$")) %>% 
   mutate_at(vars(`Burden Status`),
             ~cell_spec(.x,
                        background = case_when(.x == "Low" ~ "#2C7BB6",
@@ -1215,9 +1215,9 @@ data_frame(`Trajectory Status` = c("Shrinking", "Growing", "No Significant Chang
            `Value (change from prior 7-day period to most recent 7-day period)` = c("Percent change in cases $\\leq -10\\%$ and p-value $< 0.025$", "Percent change in cases $\\geq 10\\%$ and p-value $< 0.025$", "Otherwise")) %>% 
   mutate_at(vars(`Trajectory Status`),
             ~cell_spec(.x,
-                       background = case_when(.x == "Shrinking" ~ "#4575b4",
-                                              .x == "Growing" ~ "#ef8a62",
-                                              .x == "No Significant Change" ~ "#f7f7f7",
+                       background = case_when(.x == "Shrinking" ~ "#053061",
+                                              .x == "Growing" ~ "#67001F",
+                                              .x == "No Significant Change" ~ "#F7F7F7",
                                               TRUE ~ "#cccccc"),
                        color = case_when(.x == "No Significant Change" ~ "grey80",
                                          TRUE ~ "white"))) %>%
