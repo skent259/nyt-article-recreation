@@ -678,7 +678,7 @@ fig_counties_burden
 
 <!-- ``` -->
 
-___Click on link for animation over last 4 weeks___: https://data-viz.it.wisc.edu/wi-herc-regions-anim/
+___Click on link for animation over last 4 weeks___: https://data-viz.it.wisc.edu/dhs-activity-level-county-map-anim/
 
 ### Trajectory {.tabset .tabset-pills}
 
@@ -951,7 +951,7 @@ fig_counties_trajectory
 
 <!-- ``` -->
 
-___Click on link for animation over last 4 weeks___: https://data-viz.it.wisc.edu/wi-herc-regions-anim/
+___Click on link for animation over last 4 weeks___: https://data-viz.it.wisc.edu/dhs-activity-level-county-map-anim/
 
 ### COVID-19 Activity Level {.tabset .tabset-pills}
 
@@ -1158,7 +1158,7 @@ fig_counties_activity
 
 <!-- ``` -->
 
-___Click on link for animation over last 4 weeks___: https://data-viz.it.wisc.edu/wi-herc-regions-anim/
+___Click on link for animation over last 4 weeks___: https://data-viz.it.wisc.edu/dhs-activity-level-county-map-anim/
 
 #
 
