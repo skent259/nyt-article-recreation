@@ -917,7 +917,7 @@ fig_counties_trajectory <- county %>%
   sf::st_cast("MULTIPOLYGON") %>%
   plot_ly(split = ~county,
           color = ~trajectory.discrete,
-          colors = "RdYlBu",
+          colors = "RdBu",
           span = I(1),
           stroke = I("gray50"),
           alpha = 1,
@@ -1114,13 +1114,13 @@ fig_counties_activity <- county %>%
            )
          ) %>%
   mutate(activity.level = fct_relevel(activity.level,
-                                      c("High","Medium","Low"))) %>%
+                                      c("Low","Medium","High"))) %>%
   filter(date == max(date, na.rm = TRUE)) %>%
   # sf::st_transform(crs = "+proj=aea +lat_1=25 +lat_2=50 +lon_0=-100") %>%
   sf::st_cast("MULTIPOLYGON") %>%
   plot_ly(split = ~county,
           color = ~activity.level,
-          colors = "RdYlBu",
+          colors = "GnBu",
           span = I(1),
           stroke = I("gray50"),
           alpha = 1,
@@ -1191,7 +1191,9 @@ data_frame(`Burden Status` = c("Low", "Moderate", "Moderately High", "High"),
                                               .x == "Moderate" ~ "#ABD9E9",
                                               .x == "Moderately High" ~ "#FDAE61",
                                               .x == "High" ~ "#D7191C",
-                                              TRUE ~ "#cccccc"))) %>%
+                                              TRUE ~ "#cccccc"),
+                       color = case_when(.x == "Low" | .x == "High" ~ "white",
+                                         TRUE ~ "grey80"))) %>%
   kable(escape = F) %>% 
   kable_styling(full_width = F)
 
@@ -1214,9 +1216,11 @@ data_frame(`Trajectory Status` = c("Shrinking", "Growing", "No Significant Chang
   mutate_at(vars(`Trajectory Status`),
             ~cell_spec(.x,
                        background = case_when(.x == "Shrinking" ~ "#4575b4",
-                                              .x == "Growing" ~ "#fee090",
-                                              .x == "No Significant Change" ~ "#d73027",
-                                              TRUE ~ "#cccccc"))) %>%
+                                              .x == "Growing" ~ "#ef8a62",
+                                              .x == "No Significant Change" ~ "#f7f7f7",
+                                              TRUE ~ "#cccccc"),
+                       color = case_when(.x == "No Significant Change" ~ "grey80",
+                                         TRUE ~ "white"))) %>%
   kable(escape = F) %>% 
   kable_styling(full_width = F)
 
@@ -1234,9 +1238,9 @@ data_frame(`Burden Status` = c("Low", "Moderate", "Moderately High", "High"),
            `Growing` = c("Medium", "High", "High", "High")) %>% 
   mutate_at(vars(`Shrinking`, `No Significant Change`, `Growing`),
             ~cell_spec(.x,
-                       background = case_when(.x == "Low" ~ "#4575b4",
-                                              .x == "Medium" ~ "#fee090",
-                                              .x == "High" ~ "#d73027",
+                       background = case_when(.x == "Low" ~ "#e0f3db",
+                                              .x == "Medium" ~ "#a8ddb5",
+                                              .x == "High" ~ "#43a2ca",
                                               TRUE ~ "#cccccc"))) %>%
   kable(align = c("l","c","c","c"), escape = F) %>% 
   kable_styling(full_width = F) %>%
