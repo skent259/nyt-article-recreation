@@ -5,8 +5,8 @@ account: aravamuthan
 server: data-viz.it.wisc.edu
 hostUrl: https://data-viz.it.wisc.edu/__api__
 appId: 60
-bundleId: 222
-url: https://data-viz.it.wisc.edu/content/60/
-when: 1594703317.21903
+bundleId: 240
+url: https://data-viz.it.wisc.edu/dhs-activity-level-county-map-anim/
+when: 1594863376.1945
 asMultiple: FALSE
 asStatic: FALSE

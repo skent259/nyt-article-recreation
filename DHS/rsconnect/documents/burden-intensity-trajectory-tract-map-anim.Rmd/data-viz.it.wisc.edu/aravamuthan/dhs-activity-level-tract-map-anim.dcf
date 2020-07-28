@@ -1,0 +1,12 @@
+name: dhs-activity-level-tract-map-anim
+title: dhs-activity-level-tract-map-anim
+username: aravamuthan
+account: aravamuthan
+server: data-viz.it.wisc.edu
+hostUrl: https://data-viz.it.wisc.edu/__api__
+appId: 63
+bundleId: 243
+url: https://data-viz.it.wisc.edu/content/63/
+when: 1594917108.9994
+asMultiple: FALSE
+asStatic: FALSE

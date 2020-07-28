@@ -128,7 +128,7 @@ df_tracts_all <-
            as.factor()
          ) %>%
   mutate(trajectory.discrete = fct_relevel(trajectory.discrete,
-                                           c("Growing","No Significant Change","Shrinking"))) %>%
+                                           c("Shrinking","No Significant Change","Growing"))) %>%
   mutate(activity.level =
            case_when(
              burden.discrete == "Low" & trajectory.discrete == "Shrinking" ~ "Low",
@@ -147,7 +147,7 @@ df_tracts_all <-
          ) %>%
   mutate(activity.level = fct_relevel(activity.level,
                                       c("Low","Medium","High"))) %>%
-  filter(date == max(date, na.rm = TRUE)) %>%
+  # filter(date == max(date, na.rm = TRUE)) %>%
   # sf::st_transform(crs = "+proj=aea +lat_1=25 +lat_2=50 +lon_0=-100") %>%
   sf::st_cast("MULTIPOLYGON")
 
@@ -156,109 +156,143 @@ df_tracts_all <-
 
 ### Burden {.tabset .tabset-pills}
 
-```{r}
+```{r echo=FALSE, fig.show='animate', interval=0.25, fig.retina=2, fig.align="center"}
+for(i in MIN_DATE:MAX_DATE) {
 fig_tracts_burden <- 
-  df_tracts_all %>%
-  plot_ly(split = ~GEOID,
-          color = ~burden.discrete,
-          colors = "RdYlBu",
-          span = I(1),
-          stroke = I("gray50"),
-          alpha = 1,
-          text = ~paste0("</br>", GEOID,
-                         "</br>Cases: ", cases,
-                         "</br>New Cases (Last 7 Days): ", intensity,
-                         "</br>Population: ", population,
-                         "</br>Burden: ", round(burden.tool.tip, 3),
-                         " (", burden.rank, " out of ", burden.out.of, ")",
-                         "</br>Burden Status: ", burden.discrete),
-          # frame = ~date,
-          # ids = ~GEOID,
-          hoverinfo = "text",
-          hoveron = "fills",
-          showlegend = FALSE) %>%
-  layout(title="",
-         showlegend = FALSE) %>%
-#   colorbar(title = "Cases per Thousand") %>%
-  # animation_opts(frame = 1000, transition = 0, redraw = FALSE, mode = "afterall") %>%
-  # animation_slider() %>%
-  config(displaylogo = FALSE)
+  df_tracts_all %>% 
+  filter(date == i) %>% 
+  ggplot() + 
+  geom_sf(aes(fill = burden.discrete), show.legend = FALSE) + 
+  scale_fill_manual(values = RColorBrewer::brewer.pal(4,"RdYlBu")) + 
+  theme_test()
 
-fig_tracts_burden
+# fig_tracts_burden <- 
+#   df_tracts_all %>% 
+#   plot_ly(split = ~GEOID,
+#           color = ~burden.discrete,
+#           colors = "RdYlBu",
+#           span = I(1),
+#           stroke = I("gray50"),
+#           alpha = 1,
+#           text = ~paste0("</br>", GEOID,
+#                          "</br>Cases: ", cases,
+#                          "</br>New Cases (Last 7 Days): ", intensity,
+#                          "</br>Population: ", population,
+#                          "</br>Burden: ", round(burden.tool.tip, 3),
+#                          " (", burden.rank, " out of ", burden.out.of, ")",
+#                          "</br>Burden Status: ", burden.discrete),
+#           frame = ~date,
+#           ids = ~GEOID,
+#           hoverinfo = "text",
+#           hoveron = "fills",
+#           showlegend = FALSE) %>%
+#   layout(title="",
+#          showlegend = FALSE) %>%
+# #   colorbar(title = "Cases per Thousand") %>%
+#   animation_opts(frame = 1000, transition = 0, redraw = FALSE, mode = "afterall") %>%
+#   animation_slider() %>%
+#   config(displaylogo = FALSE)
+
+print(fig_tracts_burden)
+
+}
 
 ```
 
 
 ### Trajectory {.tabset .tabset-pills}
 
-```{r}
+```{r echo=FALSE, fig.show='animate', interval=0.25, fig.retina=2, fig.align="center"}
+for(i in MIN_DATE:MAX_DATE) {
 fig_tracts_trajectory <- 
-  df_tracts_all %>%
-  plot_ly(split = ~GEOID,
-          color = ~trajectory.discrete,
-          colors = "RdBu",
-          span = I(1),
-          stroke = I("gray50"),
-          alpha = 1,
-          text = ~paste0("</br>", GEOID,
-                         "</br>Cases: ", cases,
-                         "</br>New Cases (Last 7 Days): ", intensity,
-                         "</br>Population: ", population,
-                         "</br>Trajectory: ", scales::percent(trajectory.tool.tip, accuracy = 1),
-                         " (", trajectory.rank, " out of ", trajectory.out.of, ")",
-                         "</br>Trajectory Status: ", trajectory.discrete),
-          # frame = ~date,
-          # ids = ~GEOID,
-          hoverinfo = "text",
-          hoveron = "fills",
-          showlegend = FALSE) %>%
-  layout(title="",
-         showlegend = FALSE) %>%
-#   colorbar(title = "Cases per Thousand") %>%
-  # animation_opts(frame = 1000, transition = 0, redraw = FALSE, mode = "afterall") %>%
-  # animation_slider() %>%
-  config(displaylogo = FALSE)
+  df_tracts_all %>% 
+  filter(date == i) %>% 
+  ggplot() + 
+  geom_sf(aes(fill = trajectory.discrete), show.legend = FALSE) + 
+  scale_fill_manual(values = RColorBrewer::brewer.pal(11,"RdBu")[c(1,6,11)],
+                    breaks = c("Shrinking", "No Significant Change", "Growing")) + 
+  theme_test()
 
-fig_tracts_trajectory
+# fig_tracts_trajectory <- 
+#   df_tracts_all %>% 
+#   plot_ly(split = ~GEOID,
+#           color = ~trajectory.discrete,
+#           colors = "RdBu",
+#           span = I(1),
+#           stroke = I("gray50"),
+#           alpha = 1,
+#           text = ~paste0("</br>", GEOID,
+#                          "</br>Cases: ", cases,
+#                          "</br>New Cases (Last 7 Days): ", intensity,
+#                          "</br>Population: ", population,
+#                          "</br>Trajectory: ", scales::percent(trajectory.tool.tip, accuracy = 1),
+#                          " (", trajectory.rank, " out of ", trajectory.out.of, ")",
+#                          "</br>Trajectory Status: ", trajectory.discrete),
+#           frame = ~date,
+#           ids = ~GEOID,
+#           hoverinfo = "text",
+#           hoveron = "fills",
+#           showlegend = FALSE) %>%
+#   layout(title="",
+#          showlegend = FALSE) %>%
+# #   colorbar(title = "Cases per Thousand") %>%
+#   animation_opts(frame = 1000, transition = 0, redraw = FALSE, mode = "afterall") %>%
+#   animation_slider() %>%
+#   config(displaylogo = FALSE)
+
+print(fig_tracts_trajectory)
+
+}
 
 ```
 
 
 ### COVID-19 Activity Level {.tabset .tabset-pills}
 
-```{r}
+```{r echo=FALSE, fig.show='animate', interval=0.25, fig.retina=2, fig.align="center"}
+for(i in MIN_DATE:MAX_DATE) {
 fig_tracts_activity <- 
   df_tracts_all %>% 
-  plot_ly(split = ~GEOID,
-          color = ~activity.level,
-          colors = "GnBu",
-          span = I(1),
-          stroke = I("gray50"),
-          alpha = 1,
-          text = ~paste0("</br>", GEOID,
-                         "</br>Cases: ", cases,
-                         "</br>New Cases (Last 7 Days): ", intensity,
-                         "</br>Population: ", population,
-                         "</br>Burden: ", round(burden.tool.tip, 3),
-                         " (", burden.rank, " out of ", burden.out.of, ")",
-                         "</br>Burden Status: ", burden.discrete,
-                         "</br>Trajectory: ", scales::percent(trajectory.tool.tip, accuracy = 1),
-                         " (", trajectory.rank, " out of ", trajectory.out.of, ")",
-                         "</br>Trajectory Status: ", trajectory.discrete,
-                         "</br>Activity Level: ", activity.level),
-          # frame = ~date,
-          # ids = ~GEOID,
-          hoverinfo = "text",
-          hoveron = "fills",
-          showlegend = FALSE) %>%
-  layout(title="",
-         showlegend = FALSE) %>%
-#   colorbar(title = "Cases per Thousand") %>%
-  # animation_opts(frame = 1000, transition = 0, redraw = FALSE, mode = "afterall") %>%
-  # animation_slider() %>%
-  config(displaylogo = FALSE)
+  filter(date == i) %>% 
+  ggplot() + 
+  geom_sf(aes(fill = activity.level), show.legend = FALSE) + 
+  scale_fill_manual(values = RColorBrewer::brewer.pal(3,"GnBu")) + 
+  theme_test()
 
-fig_tracts_activity
+# fig_tracts_activity <- 
+#   df_tracts_all %>% 
+#   plot_ly(split = ~GEOID,
+#           color = ~activity.level,
+#           colors = "GnBu",
+#           span = I(1),
+#           stroke = I("gray50"),
+#           alpha = 1,
+#           text = ~paste0("</br>", GEOID,
+#                          "</br>Cases: ", cases,
+#                          "</br>New Cases (Last 7 Days): ", intensity,
+#                          "</br>Population: ", population,
+#                          "</br>Burden: ", round(burden.tool.tip, 3),
+#                          " (", burden.rank, " out of ", burden.out.of, ")",
+#                          "</br>Burden Status: ", burden.discrete,
+#                          "</br>Trajectory: ", scales::percent(trajectory.tool.tip, accuracy = 1),
+#                          " (", trajectory.rank, " out of ", trajectory.out.of, ")",
+#                          "</br>Trajectory Status: ", trajectory.discrete,
+#                          "</br>Activity Level: ", activity.level),
+#           frame = ~date,
+#           ids = ~GEOID,
+#           hoverinfo = "text",
+#           hoveron = "fills",
+#           showlegend = FALSE) %>%
+#   layout(title="",
+#          showlegend = FALSE) %>%
+# #   colorbar(title = "Cases per Thousand") %>%
+#   animation_opts(frame = 1000, transition = 0, redraw = FALSE, mode = "afterall") %>%
+#   animation_slider() %>%
+#   config(displaylogo = FALSE)
+
+print(fig_tracts_activity)
+
+}
 
 ```
 

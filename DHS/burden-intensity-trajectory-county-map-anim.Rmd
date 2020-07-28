@@ -483,7 +483,7 @@ fig_counties_burden <- county %>%
   layout(title="",
          showlegend = FALSE) %>%
 #   colorbar(title = "Cases per Thousand") %>%
-  animation_opts(frame = 1000, transition = 0, redraw = FALSE, mode = "afterall") %>%
+  animation_opts(frame = 250, transition = 0, redraw = FALSE, mode = "afterall") %>%
   animation_slider() %>%
   config(displaylogo = FALSE)
 
@@ -732,7 +732,7 @@ fig_counties_trajectory <- county %>%
   sf::st_cast("MULTIPOLYGON") %>%
   plot_ly(split = ~county,
           color = ~trajectory.discrete,
-          colors = "RdYlBu",
+          colors = "RdBu",
           span = I(1),
           stroke = I("gray50"),
           alpha = 1,
@@ -750,7 +750,7 @@ fig_counties_trajectory <- county %>%
   layout(title="",
          showlegend = FALSE) %>%
 #   colorbar(title = "Cases per Thousand") %>%
-  animation_opts(frame = 1000, transition = 0, redraw = FALSE, mode = "afterall") %>%
+  animation_opts(frame = 250, transition = 0, redraw = FALSE, mode = "afterall") %>%
   animation_slider() %>%
   config(displaylogo = FALSE)
 
@@ -923,13 +923,13 @@ fig_counties_activity <- county %>%
            )
          ) %>%
   mutate(activity.level = fct_relevel(activity.level,
-                                      c("High","Medium","Low"))) %>%
+                                      c("Low","Medium","High"))) %>%
   # filter(date == max(date, na.rm = TRUE)) %>%
   # sf::st_transform(crs = "+proj=aea +lat_1=25 +lat_2=50 +lon_0=-100") %>%
   sf::st_cast("MULTIPOLYGON") %>%
   plot_ly(split = ~county,
           color = ~activity.level,
-          colors = "RdYlBu",
+          colors = "GnBu",
           span = I(1),
           stroke = I("gray50"),
           alpha = 1,
@@ -951,7 +951,7 @@ fig_counties_activity <- county %>%
   layout(title="",
          showlegend = FALSE) %>%
 #   colorbar(title = "Cases per Thousand") %>%
-  animation_opts(frame = 1000, transition = 0, redraw = FALSE, mode = "afterall") %>%
+  animation_opts(frame = 250, transition = 0, redraw = FALSE, mode = "afterall") %>%
   animation_slider() %>%
   config(displaylogo = FALSE)
 
@@ -987,18 +987,20 @@ Burden is the total number of cases per 100,000 Wisconsin residents in the last 
 <!-- | Low             | Case rate $\leq 10$                                           | -->
 <!-- | Moderate        | $10 <$ Case rate $\leq 50$                                    | -->
 <!-- | Moderately High | $50 <$ Case rate $\leq 100$                                   | -->
-<!-- | High	          | Case rate $> 50$                                              | -->
+<!-- | High	          | Case rate $> 100$                                              | -->
 
 ```{r}
 data_frame(`Burden Status` = c("Low", "Moderate", "Moderately High", "High"),
-           `Value (per 100,000 Wisconsin residents in the past two weeks)` = c("Case rate $\\leq 10$", "$10 <$ Case rate $\\leq 50$","$50 <$ Case rate $\\leq 100$","Case rate $> 50$")) %>% 
+           `Value (per 100,000 Wisconsin residents in the past two weeks)` = c("Case rate $\\leq 10$", "$10 <$ Case rate $\\leq 50$","$50 <$ Case rate $\\leq 100$","Case rate $> 100$")) %>% 
   mutate_at(vars(`Burden Status`),
             ~cell_spec(.x,
                        background = case_when(.x == "Low" ~ "#2C7BB6",
                                               .x == "Moderate" ~ "#ABD9E9",
                                               .x == "Moderately High" ~ "#FDAE61",
                                               .x == "High" ~ "#D7191C",
-                                              TRUE ~ "#cccccc"))) %>%
+                                              TRUE ~ "#cccccc"),
+                       color = case_when(.x == "Low" | .x == "High" ~ "white",
+                                         TRUE ~ "grey80"))) %>%
   kable(escape = F) %>% 
   kable_styling(full_width = F)
 
@@ -1020,10 +1022,12 @@ data_frame(`Trajectory Status` = c("Shrinking", "Growing", "No Significant Chang
            `Value (change from prior 7-day period to most recent 7-day period)` = c("Percent change in cases $\\leq -10\\%$ and p-value $< 0.025$", "Percent change in cases $\\geq 10\\%$ and p-value $< 0.025$", "Otherwise")) %>% 
   mutate_at(vars(`Trajectory Status`),
             ~cell_spec(.x,
-                       background = case_when(.x == "Shrinking" ~ "#4575b4",
-                                              .x == "Growing" ~ "#fee090",
-                                              .x == "No Significant Change" ~ "#d73027",
-                                              TRUE ~ "#cccccc"))) %>%
+                       background = case_when(.x == "Shrinking" ~ "#053061",
+                                              .x == "Growing" ~ "#67001F",
+                                              .x == "No Significant Change" ~ "#F7F7F7",
+                                              TRUE ~ "#cccccc"),
+                       color = case_when(.x == "No Significant Change" ~ "grey80",
+                                         TRUE ~ "white"))) %>%
   kable(escape = F) %>% 
   kable_styling(full_width = F)
 
@@ -1041,11 +1045,11 @@ data_frame(`Burden Status` = c("Low", "Moderate", "Moderately High", "High"),
            `Growing` = c("Medium", "High", "High", "High")) %>% 
   mutate_at(vars(`Shrinking`, `No Significant Change`, `Growing`),
             ~cell_spec(.x,
-                       background = case_when(.x == "Low" ~ "#4575b4",
-                                              .x == "Medium" ~ "#fee090",
-                                              .x == "High" ~ "#d73027",
+                       background = case_when(.x == "Low" ~ "#e0f3db",
+                                              .x == "Medium" ~ "#a8ddb5",
+                                              .x == "High" ~ "#43a2ca",
                                               TRUE ~ "#cccccc"))) %>%
-  kable(escape = F) %>% 
+  kable(align = c("l","c","c","c"), escape = F) %>% 
   kable_styling(full_width = F) %>%
   add_header_above(c(" ", "Trajectory Status" = 3))
 

@@ -1,0 +1,12 @@
+name: dhs-activity-level-region-county-map-anim
+title: dhs-activity-level-region-county-map-anim
+username: aravamuthan
+account: aravamuthan
+server: data-viz.it.wisc.edu
+hostUrl: https://data-viz.it.wisc.edu/__api__
+appId: 69
+bundleId: 264
+url: https://data-viz.it.wisc.edu/content/69/
+when: 1595849353.56585
+asMultiple: FALSE
+asStatic: FALSE

@@ -1,6 +1,6 @@
 ---
-title: "Burden, Intensity, Trajectory of Coronavirus in Wisconsin"
-subtitle: "by Healthcare Emergency Readiness Coalition (HERC) Regions"
+title: "Burden, Trajectory, and Activity Level of Coronavirus in Wisconsin"
+subtitle: "Map Animation by HERC Regions"
 # author: "Srikanth Aravamuthan & Sean Kent"
 date: "Updated `r format(Sys.time(), '%B %d, %Y, %I:00 %p %Z')`"
 output: 
@@ -130,17 +130,6 @@ process_data <- function(data, group_var) {
 
 ```{r}
 # Helper functions for creating visualizations
-# vline <- function(x = 0, color = "#C0C0C0") {
-#   list(
-#     type = "line", 
-#     y0 = 0, 
-#     y1 = 1, 
-#     yref = "paper",
-#     x0 = x, 
-#     x1 = x, 
-#     line = list(color = color)
-#   )
-# }
 standard_line_plot <- function(df, x, y, color) {
   x_f <- as.formula(paste0("~", x))
   y_f <- as.formula(paste0("~", y))
@@ -148,24 +137,6 @@ standard_line_plot <- function(df, x, y, color) {
   color_pal <- "Spectral"
   plot_symbol <- I(23)
   
-  y_min <- 
-    df %>% 
-    filter(!is.infinite(!!sym(y)),!is.nan(!!sym(y))) %>% 
-    summarize(y_min = min(!!sym(y), na.rm = TRUE)) %>% 
-    pull()
-  y_max <- 
-    df %>% 
-    filter(!is.infinite(!!sym(y)),!is.nan(!!sym(y))) %>% 
-    summarize(y_max = max(!!sym(y), na.rm = TRUE)) %>% 
-    pull()
-  
-  df_segments <- 
-    tibble(
-      x = rep(c(10, 50, 100), each = 101),
-      y = rep(seq(0, 1.1*y_max, length.out = 101), 3)
-    ) %>% 
-    group_by(x)
-
   plot_ly(data = df,
             x = x_f,
             y = y_f,
@@ -218,23 +189,11 @@ standard_line_plot <- function(df, x, y, color) {
             size = I(50),
             mode = "markers",
             name = "7 Days Ago",
-            legendgroup = "note") %>% 
-  add_trace(data = df_segments,
-            x = ~x, 
-            y = ~y, 
-            # group = ~x,
-            color = I("#C0C0C0"),
-            text = ~paste0("Case Rate = ", x),
-            type = 'scatter',
-            mode = 'lines',
-            hoverinfo = "text", 
-            inherit = FALSE,
-            showlegend = FALSE)
+            legendgroup = "note")
 }
 
 standard_layout <- function(p) {
   p %>% 
-    # layout(shapes = list(vline(10), vline(50), vline(100))) %>% 
     layout(title = list(text = "",
                         y = 1,
                         x = 0.1,
@@ -268,184 +227,9 @@ standard_layout <- function(p) {
 
 
 
-# {.tabset .tabset-pills}
-
 ___Work in Progress___: The following is a preliminary set of visualizations to track the burden, intensity, and trajectory of Healthcare Emergency Readiness Coalition (HERC) regions in Wisconsin. 
 
-<!-- ## Burden versus Intensity {.tabset .tabset-pills} -->
-## Burden versus Intensity
-
-<!-- ### HERC Regions Across Wisconsin (Last 4 Weeks) -->
-
-```{r}
-df <- process_data(wi_regions, group_var = herc_region)
-
-fig1 <- 
-  standard_line_plot(df, "burden", "intensity", "herc_region") %>% 
-  standard_layout() %>% 
-  layout(xaxis = list(title = "Burden: New Cases per 100k (last 14 days)"),
-         yaxis = list(title = "Intensity: New Cases (last 7 days)")) 
-
-fig1
-  
-```
-
-<!-- ### Individual Regions (Last 4 Weeks) {.tabset .tabset-pills} -->
-### {.tabset .tabset-pills}
-
-```{r}
-l <- htmltools::tagList()
-
-regions <- unique(wi_counties$herc_region)
-  
-df <- process_data(wi_counties, group_var = county)
-
-for(i in 1:length(regions)) {
-  df_region <- filter(df, herc_region == regions[i])
-  
-  fig2 <- 
-    standard_line_plot(df_region, "burden", "intensity", "county") %>% 
-    standard_layout() %>% 
-    layout(xaxis = list(title = "Burden: New Cases per 100k (last 14 days)"),
-           yaxis = list(title = "Intensity: New Cases (last 7 days)")) 
-  
-  l[[regions[i]]] <- as_widget(fig2)
-  
-}
-
-```
-
-#### Fox Valley Area
-
-```{r}
-l[["Fox Valley Area"]]
-```
-
-#### North Central
-
-```{r}
-l[["North Central"]]
-```
-
-#### Northeast
-
-```{r}
-l[["Northeast"]]
-```
-
-#### Northwest
-
-```{r}
-l[["Northwest"]]
-```
-
-#### South Central
-
-```{r}
-l[["South Central"]]
-```
-
-#### Southeast
-
-```{r}
-l[["Southeast"]]
-```
-
-#### Western
-
-```{r}
-l[["Western"]]
-```
-
-<!-- ## Burden versus Trajectory {.tabset .tabset-pills} -->
-## Burden versus Trajectory
-
-<!-- ### HERC Regions Across Wisconsin (Last 4 Weeks) -->
-
-```{r}
-df <- process_data(wi_regions, group_var = herc_region)
-
-fig1 <- 
-  standard_line_plot(df, "burden", "trajectory", "herc_region") %>% 
-  standard_layout() %>% 
-  layout(xaxis = list(title = "Burden: New Cases per 100k (last 14 days)"),
-         yaxis = list(title = "Trajectory: Percent Case Change (last 2 weeks)",
-                      tickformat = "%"))
-  
-fig1
-  
-```
-
-<!-- ### Individual Regions (Last 4 Weeks) {.tabset .tabset-pills} -->
-### {.tabset .tabset-pills}
-
-```{r}
-l <- htmltools::tagList()
-
-regions <- unique(wi_counties$herc_region)
-  
-df <- process_data(wi_counties, group_var = county)
-
-for(i in 1:length(regions)) {
-  
-  df_region <- filter(df, herc_region == regions[i])
-  
-  fig2 <- 
-    standard_line_plot(df_region, "burden", "trajectory", "county") %>% 
-    standard_layout() %>% 
-    layout(xaxis = list(title = "Burden: New Cases per 100k (last 14 days)"),
-           yaxis = list(title = "Trajectory: Percent Case Change (last 2 weeks)",
-                        tickformat = "%"))
-  
-  l[[regions[i]]] <- as_widget(fig2)
-  
-}
-
-```
-
-#### Fox Valley Area
-
-```{r}
-l[["Fox Valley Area"]]
-```
-
-#### North Central
-
-```{r}
-l[["North Central"]]
-```
-
-#### Northeast
-
-```{r}
-l[["Northeast"]]
-```
-
-#### Northwest
-
-```{r}
-l[["Northwest"]]
-```
-
-#### South Central
-
-```{r}
-l[["South Central"]]
-```
-
-#### Southeast
-
-```{r}
-l[["Southeast"]]
-```
-
-#### Western
-
-```{r}
-l[["Western"]]
-```
-
-## Maps {.tabset .tabset-pills}
+## {.tabset .tabset-pills}
 
 ```{r}
 county <-
@@ -591,8 +375,6 @@ wi_current <-
 
 <!-- #### Status -->
 
-#### HERC Region
-
 ```{r dpi = 96}
 ## US Metro Map (Cases)
 fig_regions_burden <- county %>%
@@ -628,7 +410,7 @@ fig_regions_burden <- county %>%
                                c("Low","Moderate","Moderately High","High"))) %>%
   mutate(burden.discrete = fct_relevel(burden.discrete,
                                        c("High","Moderately High","Moderate","Low"))) %>%
-  filter(date == max(date, na.rm = TRUE)) %>%
+  # filter(date == max(date, na.rm = TRUE)) %>%
   # sf::st_transform(crs = "+proj=aea +lat_1=25 +lat_2=50 +lon_0=-100") %>%
   sf::st_cast("MULTIPOLYGON") %>%
   plot_ly(split = ~herc_region,
@@ -644,24 +426,20 @@ fig_regions_burden <- county %>%
                          "</br>Burden: ", round(burden.tool.tip, 3),
                          " (", burden.rank, " out of ", burden.out.of, ")",
                          "</br>Burden Status: ", burden.discrete),
-          # frame = ~date,
-          # ids = ~herc_region,
+          frame = ~date,
+          ids = ~herc_region,
           hoverinfo = "text",
           hoveron = "fills") %>%
   layout(title="",
          showlegend = FALSE) %>%
 #   colorbar(title = "Cases per Thousand") %>%
-  # animation_opts(frame = 1000, transition = 0, redraw = FALSE, mode = "afterall") %>%
+  # animation_opts(frame = 250, transition = 0, redraw = FALSE, mode = "afterall") %>%
   # animation_slider() %>%
   config(displaylogo = FALSE)
 
-fig_regions_burden
+# fig_regions_burden
 
 ```
-
-___Click on link for animation over last 4 weeks___: https://data-viz.it.wisc.edu/dhs-activity-level-region-map-anim/
-
-#### County
 
 ```{r dpi = 96}
 ## US Metro Map (Cases)
@@ -682,7 +460,7 @@ fig_counties_burden <- county %>%
                                c("Low","Moderate","Moderately High","High"))) %>%
   mutate(burden.discrete = fct_relevel(burden.discrete,
                                        c("High","Moderately High","Moderate","Low"))) %>%
-  filter(date == max(date, na.rm = TRUE)) %>%
+  # filter(date == max(date, na.rm = TRUE)) %>%
   # sf::st_transform(crs = "+proj=aea +lat_1=25 +lat_2=50 +lon_0=-100") %>%
   sf::st_cast("MULTIPOLYGON") %>%
   plot_ly(split = ~county,
@@ -698,30 +476,28 @@ fig_counties_burden <- county %>%
                          "</br>Burden: ", round(burden.tool.tip, 3),
                          " (", burden.rank, " out of ", burden.out.of, ")",
                          "</br>Burden Status: ", burden.discrete),
-          # frame = ~date,
-          # ids = ~county,
+          frame = ~date,
+          ids = ~county,
           hoverinfo = "text",
           hoveron = "fills") %>%
   layout(title="",
          showlegend = FALSE) %>%
 #   colorbar(title = "Cases per Thousand") %>%
-  # animation_opts(frame = 1000, transition = 0, redraw = FALSE, mode = "afterall") %>%
+  # animation_opts(frame = 250, transition = 0, redraw = FALSE, mode = "afterall") %>%
   # animation_slider() %>%
   config(displaylogo = FALSE)
 
-fig_counties_burden
+# fig_counties_burden
 
 ```
 
-<!-- ```{r} -->
-<!-- subplot(fig_regions_burden, fig_counties_burden) %>% -->
-<!--   # animation_opts(frame = 1000, transition = 0, redraw = FALSE, mode = "afterall") %>% -->
-<!--   # animation_slider() %>% -->
-<!--   config(displaylogo = FALSE) -->
+```{r}
+subplot(fig_regions_burden, fig_counties_burden) %>%
+  animation_opts(frame = 250, transition = 0, redraw = FALSE, mode = "afterall") %>%
+  animation_slider() %>%
+  config(displaylogo = FALSE)
 
-<!-- ``` -->
-
-___Click on link for animation over last 4 weeks___: https://data-viz.it.wisc.edu/dhs-activity-level-county-map-anim/
+```
 
 ### Trajectory {.tabset .tabset-pills}
 
@@ -843,8 +619,6 @@ ___Click on link for animation over last 4 weeks___: https://data-viz.it.wisc.ed
 
 <!-- #### Status -->
 
-#### HERC Region
-
 ```{r dpi = 96}
 ## US Metro Map (Cases)
 fig_regions_trajectory <- county %>%
@@ -890,7 +664,7 @@ fig_regions_trajectory <- county %>%
          ) %>%
   mutate(trajectory.discrete = fct_relevel(trajectory.discrete,
                                            c("Growing","No Significant Change","Shrinking"))) %>%
-  filter(date == max(date, na.rm = TRUE)) %>%
+  # filter(date == max(date, na.rm = TRUE)) %>%
   # sf::st_transform(crs = "+proj=aea +lat_1=25 +lat_2=50 +lon_0=-100") %>%
   sf::st_cast("MULTIPOLYGON") %>%
   plot_ly(split = ~herc_region,
@@ -906,24 +680,20 @@ fig_regions_trajectory <- county %>%
                          "</br>Trajectory: ", scales::percent(trajectory.tool.tip, accuracy = 1),
                          " (", trajectory.rank, " out of ", trajectory.out.of, ")",
                          "</br>Trajectory Status: ", trajectory.discrete),
-          # frame = ~date,
-          # ids = ~herc_region,
+          frame = ~date,
+          ids = ~herc_region,
           hoverinfo = "text",
           hoveron = "fills") %>%
   layout(title="",
          showlegend = FALSE) %>%
 #   colorbar(title = "Cases per Thousand") %>%
-  # animation_opts(frame = 1000, transition = 0, redraw = FALSE, mode = "afterall") %>%
+  # animation_opts(frame = 250, transition = 0, redraw = FALSE, mode = "afterall") %>%
   # animation_slider() %>%
   config(displaylogo = FALSE)
 
-fig_regions_trajectory
+# fig_regions_trajectory
 
 ```
-
-___Click on link for animation over last 4 weeks___: https://data-viz.it.wisc.edu/dhs-activity-level-region-map-anim/
-
-#### County
 
 ```{r dpi = 96}
 ## US Metro Map (Cases)
@@ -957,7 +727,7 @@ fig_counties_trajectory <- county %>%
          ) %>%
   mutate(trajectory.discrete = fct_relevel(trajectory.discrete,
                                            c("Growing","No Significant Change","Shrinking"))) %>%
-  filter(date == max(date, na.rm = TRUE)) %>%
+  # filter(date == max(date, na.rm = TRUE)) %>%
   # sf::st_transform(crs = "+proj=aea +lat_1=25 +lat_2=50 +lon_0=-100") %>%
   sf::st_cast("MULTIPOLYGON") %>%
   plot_ly(split = ~county,
@@ -973,34 +743,30 @@ fig_counties_trajectory <- county %>%
                          "</br>Trajectory: ", scales::percent(trajectory.tool.tip, accuracy = 1),
                          " (", trajectory.rank, " out of ", trajectory.out.of, ")",
                          "</br>Trajectory Status: ", trajectory.discrete),
-          # frame = ~date,
-          # ids = ~county,
+          frame = ~date,
+          ids = ~county,
           hoverinfo = "text",
           hoveron = "fills") %>%
   layout(title="",
          showlegend = FALSE) %>%
 #   colorbar(title = "Cases per Thousand") %>%
-  # animation_opts(frame = 1000, transition = 0, redraw = FALSE, mode = "afterall") %>%
+  # animation_opts(frame = 250, transition = 0, redraw = FALSE, mode = "afterall") %>%
   # animation_slider() %>%
   config(displaylogo = FALSE)
 
-fig_counties_trajectory
+# fig_counties_trajectory
 
 ```
 
-<!-- ```{r} -->
-<!-- subplot(fig_regions_trajectory, fig_counties_trajectory) %>% -->
-<!--   # animation_opts(frame = 1000, transition = 0, redraw = FALSE, mode = "afterall") %>% -->
-<!--   # animation_slider() %>% -->
-<!--   config(displaylogo = FALSE) -->
+```{r}
+subplot(fig_regions_trajectory, fig_counties_trajectory) %>%
+  animation_opts(frame = 250, transition = 0, redraw = FALSE, mode = "afterall") %>%
+  animation_slider() %>%
+  config(displaylogo = FALSE)
 
-<!-- ``` -->
-
-___Click on link for animation over last 4 weeks___: https://data-viz.it.wisc.edu/dhs-activity-level-county-map-anim/
+```
 
 ### COVID-19 Activity Level {.tabset .tabset-pills}
-
-#### HERC Region
 
 ```{r dpi = 96}
 ## US Metro Map (Cases)
@@ -1069,7 +835,7 @@ fig_regions_activity <- county %>%
          ) %>%
   mutate(activity.level = fct_relevel(activity.level,
                                       c("Low","Medium","High"))) %>%
-  filter(date == max(date, na.rm = TRUE)) %>%
+  # filter(date == max(date, na.rm = TRUE)) %>%
   # sf::st_transform(crs = "+proj=aea +lat_1=25 +lat_2=50 +lon_0=-100") %>%
   sf::st_cast("MULTIPOLYGON") %>%
   plot_ly(split = ~herc_region,
@@ -1089,24 +855,20 @@ fig_regions_activity <- county %>%
                          " (", trajectory.rank, " out of ", trajectory.out.of, ")",
                          "</br>Trajectory Status: ", trajectory.discrete,
                          "</br>Activity Level: ", activity.level),
-          # frame = ~date,
-          # ids = ~herc_region,
+          frame = ~date,
+          ids = ~herc_region,
           hoverinfo = "text",
           hoveron = "fills") %>%
   layout(title="",
          showlegend = FALSE) %>%
 #   colorbar(title = "Cases per Thousand") %>%
-  # animation_opts(frame = 1000, transition = 0, redraw = FALSE, mode = "afterall") %>%
+  # animation_opts(frame = 250, transition = 0, redraw = FALSE, mode = "afterall") %>%
   # animation_slider() %>%
   config(displaylogo = FALSE)
 
-fig_regions_activity
+# fig_regions_activity
 
 ```
-
-___Click on link for animation over last 4 weeks___: https://data-viz.it.wisc.edu/dhs-activity-level-region-map-anim/
-
-#### County
 
 ```{r dpi = 96}
 ## US Metro Map (Cases)
@@ -1162,7 +924,7 @@ fig_counties_activity <- county %>%
          ) %>%
   mutate(activity.level = fct_relevel(activity.level,
                                       c("Low","Medium","High"))) %>%
-  filter(date == max(date, na.rm = TRUE)) %>%
+  # filter(date == max(date, na.rm = TRUE)) %>%
   # sf::st_transform(crs = "+proj=aea +lat_1=25 +lat_2=50 +lon_0=-100") %>%
   sf::st_cast("MULTIPOLYGON") %>%
   plot_ly(split = ~county,
@@ -1182,30 +944,28 @@ fig_counties_activity <- county %>%
                          " (", trajectory.rank, " out of ", trajectory.out.of, ")",
                          "</br>Trajectory Status: ", trajectory.discrete,
                          "</br>Activity Level: ", activity.level),
-          # frame = ~date,
-          # ids = ~county,
+          frame = ~date,
+          ids = ~county,
           hoverinfo = "text",
           hoveron = "fills") %>%
   layout(title="",
          showlegend = FALSE) %>%
 #   colorbar(title = "Cases per Thousand") %>%
-  # animation_opts(frame = 1000, transition = 0, redraw = FALSE, mode = "afterall") %>%
+  # animation_opts(frame = 250, transition = 0, redraw = FALSE, mode = "afterall") %>%
   # animation_slider() %>%
   config(displaylogo = FALSE)
 
-fig_counties_activity
+# fig_counties_activity
 
 ```
 
-<!-- ```{r} -->
-<!-- subplot(fig_regions_activity, fig_counties_activity) %>% -->
-<!--   # animation_opts(frame = 1000, transition = 0, redraw = FALSE, mode = "afterall") %>% -->
-<!--   # animation_slider() %>% -->
-<!--   config(displaylogo = FALSE) -->
+```{r}
+subplot(fig_regions_activity, fig_counties_activity) %>%
+  animation_opts(frame = 250, transition = 0, redraw = FALSE, mode = "afterall") %>%
+  animation_slider() %>%
+  config(displaylogo = FALSE)
 
-<!-- ``` -->
-
-___Click on link for animation over last 4 weeks___: https://data-viz.it.wisc.edu/dhs-activity-level-county-map-anim/
+```
 
 #
 
@@ -1319,3 +1079,4 @@ United States Census Bureau, County Population Totals: 2010-2019. 2019. Retrieve
 
 ```{r appendix, ref.label=knitr::all_labels(),echo=TRUE,eval=FALSE}
 ```
+a
