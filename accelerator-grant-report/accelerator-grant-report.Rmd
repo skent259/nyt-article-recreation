@@ -1,0 +1,146 @@
+---
+title: "COVID-19 visualizations of descriptive statistics adapted for counties with small populations"
+subtitle: "WARF Accelerator Grant Report"
+author:
+  - "Srikanth Aravamuthan, Sean Kent, Steve Goldstein, and Brian Yandell"
+  - "The AFI DSI COVID-19 Research Group"
+date: "10/23/2020"
+output: pdf_document
+header-includes:
+  - \linespread{1.25}
+  - \usepackage{float}
+  - \floatplacement{figure}{hbt!}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = FALSE,
+  cache = FALSE,
+  warning = FALSE,
+  message = FALSE,
+  fig.align = "center",
+  fig.width=10, 
+  fig.height=4
+)
+
+library(tidyverse)
+library(here)
+library(knitr)
+library(kableExtra)
+options(knitr.kable.NA = '')
+kable_standard <- function(...) {
+  kable(..., booktabs = TRUE, linesep = "") %>% 
+    kable_styling(full_width = FALSE) %>% 
+    kable_styling(latex_options = "HOLD_position")
+}
+```
+
+#### Summary
+
+This report details a series of complementary visualizations to help public health officials and health system leaders understand the spread of COVID-19 in the state of Wisconsin. The visualizations are available interactively at <https://data-viz.it.wisc.edu/wi-metro-growth-rate/>, <https://data-viz.it.wisc.edu/wi-metro-growth-gundersen/>, and <https://data-viz.it.wisc.edu/wi-metro-growth-marshfield/> with data that updates daily and summaries that update weekly. The project uses data from the New York Times collection of confirmed cases and deaths by county, Wisconsin Department of Health Services COVID-19 historical data by county, the Corona Data Scraper world region time-series dataset, and population counts and metro area definitions from the U.S Census. 
+
+First, inspired by work from the New York Times, the project describe two visualizations that plot the growth rate of COVID-19 cases measured as average daily change over the last 7 days. By looking directly at the relative spread of cases, areas with high growth are easily identifiable. In recent data, this has identified the areas of Green Bay, Janesville, Racine, and Appleton as areas of moderately high growth as of 5/4/2020. Among these areas, Green Bay and Janesville are seeing a slow down in the growth rate, whereas Racine and Appleton are increasing their growth slightly. In addition to looking at growth rates over time, measuring them against confirmed cases per capita helps to compare outbreaks that happen at different times. From this visualization, we can see that Green Bay's outbreak appears much worse than the initial outbreak in Madison and Milwaukee on a per capita basis. 
+
+Next, New Case Counts
+
+Last, Instantaneous $R_0$
+
+\newpage
+
+#### Background
+
+The initial inspiration for the project is derived from two articles in the New York Times that showed visualizations highlighting how fast COVID-19 was spreading, and where. The first article, [*Four Ways to Measure Coronavirus Outbreaks in U.S. Metro Areas*](https://www.nytimes.com/interactive/2020/03/27/upshot/coronavirus-new-york-comparison.html), introduced a few visualizations and explained different insights into the spread of the pandemic. The second article, [*How Severe Are Coronavirus Outbreaks Across the U.S.? Look Up Any Metro Area*](https://www.nytimes.com/interactive/2020/04/03/upshot/coronavirus-metro-area-tracker.html), expanded on the visualizations by adding a few more and updating daily with new data and hot-spots. While the later article had a feature to interactively look-up any metro area, the project adds value by re-creating these charts specifically for the Wisconsin metro areas, with a few regions for comparison. 
+
+Growth rates are important in comparing different metropolitan areas because they capture the **relative spread** of the virus. Both aspects are important: **spread** is an important metric to decide where to intervene and to understand whether a previous intervention is working, while **relative** measures matter when looking at smaller metro areas or metro areas where the disease started later. Many of the visualizations that look at case count over time (especially comparing many different areas) tend to hide those regions where COVID-19 started spreading later. By focusing directly on the growth rate, we can create visualizations that can identify areas in which the disease is growing fast, no matter when the virus started affecting the area. 
+
+The project formulated the growth rate of COVID-19 in a metropolitan area by the following calculation for the average daily change in confirmed cases. Note that the original New York Times article does not mention how they calculated the metric, whereas the metric in the visualizations is based on a geometric growth rate averaged over the previous 7 days (to mitigate issues where reported cases drop off over the weekend). 
+
+\begin{equation}
+\textrm{avg daily change}_t = \left(\frac{\textrm{cases}_t}{\textrm{cases}_{t-7}} \right)^{(1/7)} - 1 
+\end{equation}
+
+#### Project Aims
+
+This project uses novel approaches to visualizing data patterns over time to detect COVID-19 outbreaks and further customized for local use. 
+
+The objectives for the study:
+
+1.	Develop COVID-19 data visualizations that address unmet needs identified by public health professionals, particularly for low population areas in WI and neighboring states.
+
+2.	Develop new COVID-19 data presentations from emergent literature and data sources that complement data analyses arising in real time from modelers in the DSI COVID-19 Research Group.
+
+3.	Develop software that creates the visualizations and automatically updates them as data sources are updated.
+
+4.	Refine and extend data visualizations to meet evolving health and research needs as the pandemic progresses and resources evolve.
+
+#### Daily Growth Rate
+
+Figure \ref{fig:gr-time} shows the daily growth rate of confirmed cases over the last 4 weeks from 5/4/2020 for the Wisconsin metropolitan areas with at least 30 cases. Metro areas with fewer than 30 cases were omitted because of the large variance and potentially misleading results growth rates provide when the number of cases is small. For example, an increase in confirmed cases from 4 to 8 is a 100\% growth, but the true cases is not expected to double. It is much more likely that the cases were delayed. 
+
+```{r gr-time, fig.cap = "\\textit{Daily growth rate of confirmed cases (once reaching 30 confirmed cases) over the last four weeks. Metro areas with high growth are easily identifiable e.g. Green Bay, WI.}", out.width = "90%"}
+knitr::include_graphics(
+  here("accelerator-grant-report/figures/growth-rate-vs-time-wi.png")
+)
+```
+
+Figure \ref{fig:gr-time} shows the Green Bay metro area has the highest growth in the last 4 weeks, consistently around 15-20\% until late April. A strength of the plot is to see right now where the virus is spreading the most (assuming that confirmed cases follow similar trends to actual cases). Another strength is to quickly see where the spread is speeding-up or slowing-down. For example, the Green Bay metro area has been slowing down in the growth rate, whereas the number of cases is still increasing at a high rate. Moreover, Oshkosh-Neenah, Eau Claire, and Appleton are seeing an increase in the spread, corresponding to an acceleration of the extent of COVID-19. 
+
+However, a limitation of the plot is to compare metro areas where the spread happens at different times. For example, Madison and Milwaukee see a large growth in confirmed cases in mid-March, but that does not appear when looking at data from the previous 4 weeks. Another limitation is the case data quality may vary by size of metro areas where the larger metro areas may have a larger testing capacity, whereas smaller areas may have less reliable data. 
+
+Several interactivity features were added to this visualization. Double-clicking on a region in the legend will start a comparison, and others can be added to the comparison by single-clicking on them. Hovering over any data point provides details-on-demand including the metro area name, date, cases, and daily change. Giving context to the visualization and letting the user to explore the data for the area of interest. 
+
+It can be important to distinguish between places where cases are growing fast with few cases and places where growing fast with several cases. The later type of area is at severe risk for overwhelming the hospital system, whereas the former may have more time to prepare for a surge in cases. The plot of growth rate over time is not able to distinguish between the two types of areas. Figure \ref{fig:gr-cases} shows the growth rate of daily cases compared to the confirmed cases per thousand people updated as of 5/4/2020. Both figures have the same y-axis, but different x-axis where the latter figure is a density measurement of COVID-19 in the metro area. 
+
+```{r gr-cases, fig.cap = "\\textit{Daily growth rate of confirmed cases (once reaching 30 confirmed cases) versus confirmed cases per capita. The visualization compares areas based on relative prevalence of COVID-19.}", out.width = "90%"}
+knitr::include_graphics(
+  here("accelerator-grant-report/figures/growth-rate-vs-cases-wi.png")
+)
+```
+
+Figure \ref{fig:gr-cases} has a few important features. First, confirmed cases can only increase, and so the lines will continue to move to the right. The further to the right, the worse the extent of the disease in a given area. Second, the goal of a given area is to reach an average daily change of 0\% where there are no new cases. If growth rate is low or trending downward, the area is still increasing in the number of cases. Places with slower growth rates will often have points much closer together, and so it can be hard to judge time from this visualization. 
+
+Figure \ref{fig:gr-cases} distinguishes the Green Bay metro area has been the hardest hit metro area. The cases per thousand are close to double that of Milwaukee, the next highest in Wisconsin. Moreover, Oshkosh-Neenah, Eau Claire, and Appleton are showing higher growth rates recently and have a very low number of cases per capita, indicating the disease is not wide-spread. The figure can compare areas seeing large outbreaks at different times. It can be seen that Madison, which had high growth rates in mid-March, is seeing very little spread, whereas Racine has continued to grow in early-May, and is accelerating despite seeing a drop in growth rate similar to Madison early on. 
+
+Figure \ref{fig:gr-cases} can be difficult to read at first. The combination of axes can provide valuable information, but one has to be careful not to interpret a decreasing trend as the end of the growth. Any positive growth rate indicates that COVID-19 is still spreading. This also relies on confirmed cases being similar to actual cases. When comparing metro areas at different times, this assumption might be less valid. For example, it may be the case that many people in Milwaukee went undetected early on, and have since recovered. Green Bay may have seen a much larger proportion of the population tested, thus  more cases detected than Milwaukee. Nevertheless, this plot has a lot of advantages for those deciding where to focus interventions. 
+
+#### New Case Counts
+
+For some counties with a small number of cases, growth rates may be somewhat misleading. A county with only 4 cases would have a 50% growth rate if it had 6 cases the next day. In this case, the number of new cases might be more informative. The accompanying chart shows a weekly average of new cases compared to the number of cases for various counties. Figure \ref{fig:new-cases-cases} helps distinguish between places where cases are growing fast with few cases and places where cases are numerous and still growing fast. Works well for counties with only a few cases. Lastly, the plot takes into account both the trajectory of the disease and the burden on the clinics.
+
+Figure \ref{fig:new-cases-cases} is applicable to smaller counties e.g. LaCrosse, Wisconsin and Allamakee, Iowa while also scaling to larger counties e.g. Winona, MN. The interpretation of the plot using new cases by case count is easier to use since an increasing trend implies the number of new cases is greater today than it was yesterday or the virus is growing quickly. Conversely, a decreasing trend implies the number of new cases is lesser today than it was yesterday or the virus is growing quickly. Alternatively, a constant trend implies the number of new cases is the same today as it was yesterday or the virus is spreading at the same rate. Similar to the previous plots, the goal of a given area is to reach an average daily change of 0\% where there are no new cases. 
+
+```{r new-cases-cases, fig.cap = "\\textit{New cases versus cumulative cases over the last four week for the Gundersen Health System region.}", out.width = "90%"}
+knitr::include_graphics(
+  here("accelerator-grant-report/figures/new-cases-cases.png")
+)
+```
+
+#### Instantaneous $R_0$
+
+Governments and health sytemes increasingly use R~0~ as a metric for whether the number of cases is growing faster than they can manage or reducing as quickly as they would like. R~0~ represents the number of new infections estimated to originate from a single case. An R~0~ below 1 implies the number of cases is reducing, permitting communities to open back up, while an R~0~ above 1 implies necessitating renewed lockdowns or other measures. The metric describes a snapshot of how the virus is spreading at a given time and place. Therefore, visualizing R~0~ spatially and temporally is necessary to accurately and effectively report the metric.
+
+Most visualizations suffer from (1) overplotting, (2) lack of uncertainty component, (3) inability to provide both spatial and temporal context, or (4) inability to compare between different entities at different times. Thus, Figure \ref{fig:instantaneous-r0} is an intuitive approach to summarize R~0~ spatially and temporally for all Wisconsin counties over all time points. It preserves the geographical orientation of the entities and maintains the time dependence of the metric. The method plots multiple variables per entity, namely time-series data of R~0~ per county to prevent overplotting observed in line plots. It uses more effective visual encoding schemes than just color observed in choropleth maps. Each entity is given equal plot area to help health system officials weigh counties equally and determine geographic hot spots. Hovering over data points provides details-on-demand including the county name, date, number of cases, mean R~0~, and 95% CI. The semantic mapping of color encodes "risk" where the line and tooltip are red if the number of cases increases fast, yellow if it stays the same or increases slowly, and green if it decreases. Similarly, the plot area encodes "risk" using the current mean R~0~. The line is the mean R~0~ and the gray area is the 95% CI or the uncertainty. The horizontal lines denote the boundaries for risk. Also, the user can modify the plots using the zoom, pan, and scale features to a specific view, necessary for reporting.
+
+```{r instantaneous-r0, fig.cap = "\\textit{Instantaneous $R_0$ geofaceted by Wisconsin counties.}", out.width = "90%"}
+knitr::include_graphics(
+  here("accelerator-grant-report/figures/instantaneous-r0.png")
+)
+```
+
+Figure \ref{fig:instantaneous-r0} at the time of October 21, 2020 shows low to high-risk counties in the northwest, and low-risk counties in the east and northeast to southeast areas of the state. Figure \ref{fig:instantaneous-r0-dane-county} shows Dane County can be easily identified as low risk. The R~0~ is below 1.2 and decreasing in trend. The neighboring counties are either low-risk or moderate-risk with decreasing in trend.
+
+```{r instantaneous-r0-dane-county, fig.cap = "\\textit{Instantaneous $R_0$ for Dane County.}", out.width = "90%"}
+knitr::include_graphics(
+  here("accelerator-grant-report/figures/instantaneous-r0-dane-county.png")
+)
+```
+
+#### Impact
+
+After the website went live, we followed-up a second time with the clients and other end-users to customize visualizations and other features to their specific needs. Corey Zarecki, Director of Envision at Gundersen Health System, wanted to see regional information over 21 counties in 3 states in the health system. However, the previous plots did not provide meaningful results for counties with few cases. Hence, counties with less 30 confirmed cases were omitted. According to a New York Times article, density measurements focus on communities where the disease is prevalent. Similar to Figure \ref{fig:gr-time} and \ref{fig:gr-cases}, Figure \ref{fig:new-cases-cases} shows whether a community has succeeded in slowing the rate of growth before there are many cases for new cases instead of growth rate and cases instead of cases per capita. 
+
+Corey Zarecki provided feedback after publishing the website of the modified New York Times graphics for counties containing Gundersen clinics including the charts were easy to use and also shows very clearly the hot-spots confirming other sources. Moreover, he stated the biggest benefit is showing early detection for areas of interest enabling them to anticipate trends a few critical days in advance. Murali Narayana, Executive Director at Marshfield Clinic and EVP Care Delivery and Chief Strategy Officer at Marshfield Clinic Health System, similarly provided comments after publishing the website of the modified New York Times graphics for counties containing Marshfield clinics including the charts were able track the daily growth rate and doubling time as well as providing a better understanding of the trend on a daily basis using a time window to meet their needs in their service area. Additionally, Gundersen Health and Marshfield Clinic in addition to the Wisconsin Department of Health Services currently use the instantaneous R~0~ visualization to anticipate trends and alert health professionals a few critical days in advance.
+
+#### Maintenance 
+
+The group has developed the set of tools and compiled the results through RStudio Connect website <https://data-viz.it.wisc.edu/dashboard/>. The group will continue developing these tools and publicly sharing updates through the Github repository <https://github.com/skent259/nyt-article-recreation>. Additionally, the code is folded at the end of the respective webpages and plots can be exported as PNG files. Moreover, the dataset and corresponding visualizations are automatically updated daily and summary of the results were initially provided weekly. This work has opened the door for additional collaborations and suggests that statisticians can provide value by using statistical thinking to design effective visualizations. We hope to continue with future work that takes into account the differences in testing and other measures of disease spread such as R~0~ from epidemiological models.
